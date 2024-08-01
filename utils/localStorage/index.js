@@ -7,9 +7,9 @@ import { Center, NativeBaseProvider, Text } from "native-base";
 import Ionicons from "@expo/vector-icons/Ionicons";
 //custscreen
 import Home from "./screens/home";
-import Barang from "./screens/barang";
-import Profile from "./screens/profile";
-import Splash from "./screens/splash";
+import Barang from "../../screens/barang";
+import Profile from "../../screens/profile";
+import Splash from "../../screens/splash";
 
 
 
@@ -37,7 +37,7 @@ const CustomTabBarButton = ({ children, onPress }) => (
         width: 70,
         height: 70,
         borderRadius: 35,
-        backgroundColor: "#24a8e0"
+        backgroundColor: "#b91c1c"
       }}
     >
       {children}
@@ -69,7 +69,7 @@ const Tabs = () => {
             <Ionicons
               name={iconName}
               size={28}
-              color={focused ? "#24a8e0" : color}
+              color={focused ? "#b91c1c" : color}
             />
           );
         },
@@ -100,8 +100,8 @@ const Tabs = () => {
           headerShown: false,
           tabBarButton: (props) => (
             <CustomTabBarButton {...props}>
-              <Ionicons name="cube" size={40} color="white" alignSelf="center" style={styles.bikeIcon} />
-              <Text alignSelf={"center"} style={styles.textIcon}>Barang</Text>
+              <Ionicons name="reader" size={40} color="white" alignSelf="center" style={styles.bikeIcon} />
+              <Text alignSelf={"center"} style={styles.textIcon}>Reservasi</Text>
             </CustomTabBarButton>
           )
         }}
@@ -143,7 +143,7 @@ export default App;
 
 const styles = StyleSheet.create({
   shadow: {
-    shadowColor: "#24a8e0",
+    shadowColor: "#7F5DF0",
     shadowOffset: {
       width: 0,
       height: 10,
