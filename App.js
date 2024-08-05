@@ -10,6 +10,7 @@ import Home from "./screens/home";
 import Barang from "./screens/barang";
 import Profile from "./screens/profile";
 import Splash from "./screens/splash";
+import CreateBarang from "./screens/createbarang";
 
 
 
@@ -131,6 +132,11 @@ const App = () => {
             component={Splash}
             options={noHead}
           /> */}
+          <Stack.Screen
+            name="CreateBarang"
+            component={CreateBarang}
+            options={noHead}
+          />
 
 
         </Stack.Navigator>
