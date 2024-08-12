@@ -11,6 +11,7 @@ import Barang from "./screens/barang";
 import Profile from "./screens/profile";
 import Splash from "./screens/splash";
 import CreateBarang from "./screens/createbarang";
+import Login from "./screens/login";
 
 
 
@@ -122,11 +123,11 @@ const App = () => {
           <Stack.Screen
             name="Tabs"
             component={Tabs} options={noHead} />
-          {/* <Stack.Screen
+          <Stack.Screen
             name="Login"
             component={Login}
             options={noHead}
-          /> */}
+          />
           {/* <Stack.Screen
             name="Splash"
             component={Splash}

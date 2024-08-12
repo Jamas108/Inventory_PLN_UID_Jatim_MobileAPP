@@ -1,64 +1,99 @@
-import React, { useState } from "react";
-import { Box, ScrollView, Image, Text, Heading, VStack, ZStack, Input, HStack, Icon, Button, View, Center } from "native-base";
+import React, { useState, useEffect } from "react";
+import { Box, ScrollView, Image, Text, Heading, VStack, Input, Button, Center, Icon } from "native-base";
 import { FontAwesome } from "@expo/vector-icons";
 import Header from "../components/header";
 
-const Profile = () => {
-    const [username, setUsername] = useState("Satrio Tegar Nurwicaksono");
-    const [name, setName] = useState("UP3 Surabaya Selatan");
-    const [email, setEmail] = useState("admin@gmail.com");
-    const [phone, setPhone] = useState("0812-3456-7890");
+const Profile = ({ navigation }) => {
+    const [nama, setNama] = useState("");
+    const [jenisKelamin, setJenisKelamin] = useState("");
+    const [noTelepon, setNoTelepon] = useState("");
+    const [email, setEmail] = useState("");
+
+    const fetchUserProfile = async () => {
+        try {
+            const response = await fetch('http://10.0.2.2:3000/users'); // Ensure you have the correct endpoint
+            if (!response.ok) { 
+                throw new Error('Failed to fetch user profile');
+            }
+            const user = await response.json();
+            setNama(user.Nama || ""); // Ensure fallback values
+            setJenisKelamin(user.Jenis_Kelamin || "");
+            setNoTelepon(user.No_Telepon || "");
+            setEmail(user.email || "");
+        } catch (error) {
+            console.error('Failed to fetch user profile', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchUserProfile();
+    }, []);
 
     const handleLogout = () => {
-        // Logic for logout
+        // Contoh logika untuk logout, seperti menghapus token dari AsyncStorage (jika ada)
+        // AsyncStorage.removeItem('userToken');
         console.log("User logged out");
+
+        // Arahkan ke halaman login setelah logout
+        navigation.replace('Login'); // Menggunakan 'replace' agar user tidak dapat kembali ke halaman profile setelah logout
     };
 
     return (
         <>
             <Header title={"Profile"} />
             <ScrollView>
-                <Center mt={10}>
+                <Center mt={5}>
                     <Image
-                        source={require("../assets/logo.png")}
+                        source={require("../assets/profile.jpg")}
                         alt="Profile Picture"
                         size="xl"
                         borderRadius={100}
                     />
                     <Heading mt={5} fontSize="xl">
-                        {name}
+                        {nama}
                     </Heading>
                 </Center>
-                <VStack space={4} mt={10} px={5}>
+                <VStack space={4} mt={4} px={5}>
                     <Box>
                         <Text fontSize="md" color="gray.500">
-                            Username
+                            Nama
                         </Text>
                         <Input
-                            value={username}
-                            onChangeText={setUsername}
+                            value={nama}
+                            onChangeText={setNama}
                             mt={2}
                             isReadOnly
                         />
                     </Box>
                     <Box>
                         <Text fontSize="md" color="gray.500">
-                            Email Address
+                            Jenis Kelamin
+                        </Text>
+                        <Input
+                            value={jenisKelamin}
+                            onChangeText={setJenisKelamin}
+                            mt={2}
+                            isReadOnly
+                        />
+                    </Box>
+                    {/* <Box>
+                        <Text fontSize="md" color="gray.500">
+                            No Telepon
+                        </Text>
+                        <Input
+                            value={noTelepon}
+                            onChangeText={setNoTelepon}
+                            mt={2}
+                            isReadOnly
+                        />
+                    </Box> */}
+                    <Box>
+                        <Text fontSize="md" color="gray.500">
+                            Email
                         </Text>
                         <Input
                             value={email}
                             onChangeText={setEmail}
-                            mt={2}
-                            isReadOnly
-                        />
-                    </Box>
-                    <Box>
-                        <Text fontSize="md" color="gray.500">
-                            Phone Number
-                        </Text>
-                        <Input
-                            value={phone}
-                            onChangeText={setPhone}
                             mt={2}
                             isReadOnly
                         />

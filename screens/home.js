@@ -3,7 +3,7 @@ import { Box, ScrollView, Image, Text, Heading, VStack, Icon, Button } from "nat
 import Header from "../components/header";
 import { MaterialIcons } from "@expo/vector-icons";
 
-const Home = () => {
+const Home =  ({ navigation }) => {
     return (
         <>
             <Header title={"Home"} />
@@ -18,9 +18,9 @@ const Home = () => {
                             borderRadius="full"
                             mt={4}
                         />
-                        <Heading textAlign="center">Selamat Datang di Inventory PLN</Heading>
-                        <Text textAlign="center" fontSize="md" color="gray.600" px={4}>
-                            Sistem Inventaris PLN membantu Anda mengelola dan melacak aset dengan mudah dan efisien.
+                        <Heading textAlign="center">Selamat Datang </Heading>
+                        <Text textAlign="justify" fontSize="md" color="gray.600" px={4}>
+                            Sistem Inventaris UID JATIM siap membantu Anda mengelola dan melacak aset dengan mudah dan efisien.
                             Akses data inventaris Anda kapan saja dan di mana saja.
                         </Text>
                         <Button
@@ -28,9 +28,9 @@ const Home = () => {
                             size="lg"
                             colorScheme="blue"
                             leftIcon={<Icon as={MaterialIcons} name="inventory" size="sm" />}
-                            onPress={() => alert("Navigating to inventory!")}
+                            onPress={() => navigation.navigate('Barang')}
                         >
-                            Lihat Inventaris
+                            Ajukan Permintaan Barang
                         </Button>
                     </VStack>
                 </Box>
