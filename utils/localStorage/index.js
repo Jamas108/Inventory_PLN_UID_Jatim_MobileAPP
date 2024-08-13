@@ -1,162 +1,38 @@
-import React from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
-import { Center, NativeBaseProvider, Text } from "native-base";
-import Ionicons from "@expo/vector-icons/Ionicons";
-//custscreen
-import Home from "./screens/home";
-import Barang from "../../screens/barang";
-import Profile from "../../screens/profile";
-import Splash from "../../screens/splash";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import FIREBASE from '../../actions/config/FIREBASE';
 
-
-
-
-
-
-// Navigator Declaration
-const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
-
-const noHead = { headerShown: false };
-
-const CustomTabBarButton = ({ children, onPress }) => (
-  <TouchableOpacity
-    style={{
-      top: -30,
-      justifyContent: "center",
-      alignItems: "center",
-      ...styles.shadow
-    }}
-    onPress={onPress}
-  >
-    <View
-      style={{
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: "#b91c1c"
-      }}
-    >
-      {children}
-    </View>
-  </TouchableOpacity>
-);
-
-const Tabs = () => {
-  return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color }) => {
-          let iconName;
-          switch (route.name) {
-            case "Home":
-              iconName = "home";
-              break;
-            case "Profile":
-              iconName = "person";
-              break;
-            case "Barang":
-              iconName = "box";
-              iconStyle = focused
-                ? { color: "red", fontSize: 40 }
-                : { color: "black", fontSize: 40 }; // Change styles here
-              break;
-          }
-          return (
-            <Ionicons
-              name={iconName}
-              size={28}
-              color={focused ? "#b91c1c" : color}
-            />
-          );
-        },
-        tabBarIconStyle: { marginTop: 5 },
-        tabBarStyle: {
-          alignSelf: "center",
-          height: 70,
-          width: "95%",
-          borderRadius: 10,
-          marginBottom: 10,
-          borderTopWidth: 0,
-          backgroundColor: '#fff',
-        },
-        tabBarLabel: ({ children, color, focused }) => {
-          return (
-            <Text color={focused ? "black" : color} mb={2}>
-              {children}
-            </Text>
-          );
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={Home} options={noHead} />
-      <Tab.Screen
-        name="Barang"
-        component={Barang}
-        options={{
-          headerShown: false,
-          tabBarButton: (props) => (
-            <CustomTabBarButton {...props}>
-              <Ionicons name="reader" size={40} color="white" alignSelf="center" style={styles.bikeIcon} />
-              <Text alignSelf={"center"} style={styles.textIcon}>Reservasi</Text>
-            </CustomTabBarButton>
-          )
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={Profile} options={noHead} />
-    </Tab.Navigator>
-  );
+export const storeData = async (key, value) => {
+  try {
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    // saving error
+  }
 };
 
-const App = () => {
-  return (
-    <NativeBaseProvider>
-      <NavigationContainer>
-        <Stack.Navigator>
-          <Stack.Screen
-            name="Tabs"
-            component={Tabs} options={noHead} />
-          {/* <Stack.Screen
-            name="Login"
-            component={Login}
-            options={noHead}
-          /> */}
-          {/* <Stack.Screen
-            name="Splash"
-            component={Splash}
-            options={noHead}
-          /> */}
+export const getData = async (key) => {
+  try {
+    // Attempt to get data from AsyncStorage
+    const localData = await AsyncStorage.getItem(key);
 
+    if (localData !== null) {
+      // If data is available locally, return it
+      return JSON.parse(localData);
+    } else {
+      // If data is not available locally, fetch it from Firebase
+      const snapshot = await FIREBASE.database().ref(`users/${key}`).once('value');
+      const data = snapshot.val();
 
-        </Stack.Navigator>
-      </NavigationContainer>
-    </NativeBaseProvider>
-  );
+      // Save the data to AsyncStorage for future use
+      await storeData(key, data);
+
+      return data;
+    }
+  } catch (error) {
+    console.error('Error getting data:', error);
+    throw error;
+  }
 };
 
-export default App;
-
-const styles = StyleSheet.create({
-  shadow: {
-    shadowColor: "#7F5DF0",
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.5,
-    elevation: 5,
-  },
-  bikeIcon: {
-    marginTop: 15, // Adjust this value to change the vertical position of the icon
-  },
-  textIcon: {
-    marginTop: 12,
-    // Adjust this value to change the vertical position of the icon
-  },
-});
+export const clearStorage = async() =>{
+  AsyncStorage.clear();
+}

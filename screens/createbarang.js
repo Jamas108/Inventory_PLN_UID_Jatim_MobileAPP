@@ -1,155 +1,228 @@
 import React, { useState, useEffect } from 'react';
-import Header from '../components/header';
 import { ScrollView, Alert } from 'react-native';
-import { Box, Button, Text, VStack, Input, Select, FormControl, Divider } from 'native-base';
-
-const Id_Kategori_PeminjamanOptions = [
-  { id: 1, name: 'Insidentil' },
-  { id: 2, name: 'Reguler' },
-  // Tambahkan kategori lainnya jika diperlukan
-];
+import { Box, Button, Text, VStack, Input, Select, FormControl, HStack, Modal } from 'native-base';
+import FIREBASE from '../actions/config/FIREBASE';
+import Header from '../components/header';
+import * as DocumentPicker from 'expo-document-picker';
+import { getData } from '../utils';
 
 const CreateBarang = ({ navigation }) => {
-  const [items, setItems] = useState([{ id: 1 }]);
+  const [items, setItems] = useState([{ id: 1, namaBarang: '', kodeBarang: '', kategoriBarang: '', jumlahBarang: '' }]);
   const [formData, setFormData] = useState({
     tanggalPeminjaman: '',
     Id_Kategori_Peminjaman: '',
     tanggalKembali: '',
-    barangItems: []
   });
   const [barangOptions, setBarangOptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [formError, setFormError] = useState('');
+  const [fileSurat, setFileSurat] = useState(null);
+  const [user, setUser] = useState(null); // Store the entire user data
+  const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
 
-  // Function to fetch data barang masuk from API
-  const fetchBarangMasuk = async () => {
+  const Id_Kategori_PeminjamanOptions = [
+    { id: 'Insidentil', name: 'Insidentil' },
+    { id: 'Reguler', name: 'Reguler' },
+  ];
+
+  useEffect(() => {
+    getBarangMasuk();
+    getUserData();
+  }, []);
+
+  const getBarangMasuk = async () => {
     try {
-      let response = await fetch('http://10.0.2.2:3000/barang_masuk');
-      let data = await response.json();
-      setBarangOptions(data);
+      const userRef = FIREBASE.database().ref('barang_masuk');
+      const snapshot = await userRef.once('value');
+      const barangMasukData = snapshot.val();
+
+      if (barangMasukData) {
+        setBarangOptions(Object.values(barangMasukData));
+      } else {
+        console.log('Data barang masuk tidak ditemukan');
+      }
     } catch (error) {
-      console.error('Fetch error:', error);
-      Alert.alert('Error', 'Unable to fetch data from the server.');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching barang masuk data:', error);
     }
   };
 
-  // Panggil API saat komponen pertama kali di-mount
-  useEffect(() => {
-    fetchBarangMasuk();
-  }, []);
+  const getUserData = async () => {
+    try {
+      const userData = await getData("user");
+
+      if (userData) {
+        const userRef = FIREBASE.database().ref(`users/${userData.uid}`);
+        const snapshot = await userRef.once("value");
+        const updatedUserData = snapshot.val();
+
+        if (updatedUserData) {
+          setUser(updatedUserData); // Store the entire user data including uid
+        } else {
+          console.log("User data not found");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const pickDocument = async () => {
+    try {
+      let result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+      });
+
+      if (result && !result.canceled) {
+        const selectedFile = result.assets ? result.assets[0] : result; // Handle both cases
+        setFileSurat(selectedFile);
+        Alert.alert('File Terpilih', `File terpilih: ${selectedFile.name}`);
+      } else {
+        Alert.alert('Error', 'Tidak ada file yang dipilih.');
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Terjadi kesalahan saat memilih file.');
+    }
+  };
+
+  const uploadFileSurat = async (barang_keluar_id, fileSurat) => {
+    if (fileSurat) {
+      try {
+        const response = await fetch(fileSurat.uri);
+        const blob = await response.blob();
+
+        const fileName = `${barang_keluar_id}_${fileSurat.name}`;
+        const reference = FIREBASE.storage().ref(`surat_jalan/${fileName}`);
+
+        await reference.put(blob);
+
+        const downloadURL = await reference.getDownloadURL();
+        return downloadURL;
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+      }
+    }
+    return null;
+  };
+
+  const addBarang_Keluar = async () => {
+    if (!formData.tanggalPeminjaman || !formData.Id_Kategori_Peminjaman ||
+        (formData.Id_Kategori_Peminjaman === 'Insidentil' && !formData.tanggalKembali) ||
+        items.some(item => !item.namaBarang || !item.jumlahBarang)) {
+        setFormError('Semua field wajib diisi.');
+        setModalVisible(true); // Show modal when there's an error
+        return;
+    }
+
+    try {
+        const newRef = FIREBASE.database().ref('Barang_Keluar').push();
+        const barang_keluar_id = newRef.key;
+
+        const fileSuratURL = await uploadFileSurat(barang_keluar_id, fileSurat);
+
+        const data = {
+            id: barang_keluar_id,
+            userId: user.uid, // Store the user UID
+            tanggal_peminjamanbarang: formData.tanggalPeminjaman || null,
+            Kategori_Peminjaman: formData.Id_Kategori_Peminjaman,
+            No_SuratJalanBK: '',
+            File_BeritaAcara: '',
+            Nama_PihakPeminjam: user.name || '', // Take name from the stored user data
+            Catatan: '',
+            Tanggal_PengembalianBarang: formData.tanggalKembali || null,
+            File_Surat: fileSuratURL,
+            status: 'Pending', // Set status automatically to 'Pending'
+            barang: items.map(item => {
+                const barang_id = FIREBASE.database().ref().push().key;
+                return {
+                    id: barang_id,
+                    nama_barang: item.namaBarang || null,
+                    kode_barang: item.kodeBarang || null,
+                    kategori_barang: item.kategoriBarang || null,
+                    jumlah_barang: item.jumlahBarang || null,
+                };
+            }),
+        };
+
+        await newRef.set(data);
+
+        Alert.alert('Berhasil', `Barang berhasil diajukan`);
+        navigation.goBack();
+    } catch (error) {
+        console.error('Error saving data:', error);
+        Alert.alert('Error', 'Terjadi kesalahan saat menyimpan data.');
+    }
+  };
 
   const handleAddItem = () => {
-    setItems([...items, { id: items.length + 1 }]);
+    setItems([...items, { id: items.length + 1, namaBarang: '', kodeBarang: '', kategoriBarang: '', jumlahBarang: '' }]);
   };
 
   const handleInputChange = (index, name, value) => {
     const newItems = [...items];
-    newItems[index][name] = value;
-    setItems(newItems);
 
     if (name === 'namaBarang') {
       const selectedBarang = barangOptions.find(item => item.Kode_Barang === value);
       if (selectedBarang) {
+        newItems[index].namaBarang = selectedBarang.Nama_Barang;
         newItems[index].kodeBarang = selectedBarang.Kode_Barang;
-        newItems[index].jenisBarang = selectedBarang.Jenis_Barang;
+        newItems[index].kategoriBarang = selectedBarang.Jenis_Barang;
       }
+    } else {
+      newItems[index][name] = value;
     }
+
+    setItems(newItems);
   };
-
-
-  const handleFormSubmit = async () => {
-    const dataToSubmit = {
-      tanggal_BarangKeluar: formData.tanggalPeminjaman,
-      Id_Kategori_Peminjaman: formData.Id_Kategori_Peminjaman,
-      tanggal_PengembalianBarang: formData.tanggalKembali,
-      Id_User: 1, 
-    Id_StatusBarangKeluar: 1,
-      barangItems: items.map(item => ({
-        Nama_Barang: item.namaBarang,
-        Kode_BarangKeluar: item.kodeBarang,
-        Kategori_Barang: item.jenisBarang,
-        Jumlah_Barang: item.jumlahBarang
-      }))
-    };
-
-    try {
-      let response = await fetch('http://10.0.2.2:3000/barang_keluar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dataToSubmit),
-      });
-
-      let result = await response.json();
-      if (result.success) {
-        Alert.alert('Success', result.message);
-        navigation.goBack();
-      } else {
-        Alert.alert('Error', 'Failed to save data');
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      Alert.alert('Error', 'Unable to save data to the server.');
-    }
-  };
-
 
   return (
     <>
-      <Header withBack="true" title={"CreateBarang"} />
+      <Header title={"Barang Keluar"} withBack={true} />
       <ScrollView contentContainerStyle={{ padding: 10 }}>
-        <Box
-          flexDirection="row"
-          justifyContent="space-between"
-          alignItems="center"
-          padding={4}
-          backgroundColor="coolGray.100"
-          borderRadius="lg"
-          mb={1}
-          ml={-4}
-        >
-          <Text fontSize="xl" fontWeight="bold">Pengajuan Peminjaman Barang</Text>
-        </Box>
-        <Divider h={1} mt={-3} mb={5} bgColor={'black'} />
-
         <VStack space={4} width="100%">
           <FormControl>
-            <FormControl.Label>Kategori Peminjaman</FormControl.Label>
+            <FormControl.Label>Kategori Pengajuan</FormControl.Label>
             <Select
               selectedValue={formData.Id_Kategori_Peminjaman}
               onValueChange={(value) => setFormData({ ...formData, Id_Kategori_Peminjaman: value })}
             >
               {Id_Kategori_PeminjamanOptions.map(option => (
-                <Select.Item key={option.id} label={option.name} value={option.id.toString()} />
+                <Select.Item key={option.id} label={option.name} value={option.id} />
               ))}
             </Select>
           </FormControl>
 
-
-
           <FormControl>
-            <FormControl.Label>Tanggal Peminjaman</FormControl.Label>
+            <FormControl.Label>Tanggal Pengajuan</FormControl.Label>
             <Input
-              type="date"
-              placeholder="Masukan Rencana Tanggal Peminjaman Barang"
+              placeholder="Masukan Rencana Tanggal Pengajuan Barang"
               value={formData.tanggalPeminjaman}
               onChangeText={(value) => setFormData({ ...formData, tanggalPeminjaman: value })}
             />
           </FormControl>
 
-          {formData.Id_Kategori_Peminjaman === '1' && (
+          {formData.Id_Kategori_Peminjaman === 'Insidentil' && (
             <FormControl>
               <FormControl.Label>Tanggal Kembali</FormControl.Label>
               <Input
-                type="date"
                 placeholder="Masukan Tanggal Kembali Barang"
                 value={formData.tanggalKembali}
-                onChange={(event) => setFormData({ ...formData, tanggalKembali: event.target.value })}
+                onChangeText={(value) => setFormData({ ...formData, tanggalKembali: value })}
               />
             </FormControl>
           )}
+
+          <FormControl>
+            <FormControl.Label>Upload Surat Jalan (PDF)</FormControl.Label>
+            <Button onPress={pickDocument}>Pilih File PDF</Button>
+
+            {fileSurat ? (
+              <Text mt={2} color="green.500">File terpilih: {fileSurat.name}</Text>
+            ) : (
+              <Text mt={2} color="red.500">Belum ada file yang dipilih</Text>
+            )}
+          </FormControl>
 
           {items.map((item, index) => (
             <Box key={index} bg="white" p={4} borderRadius="lg" shadow={2} mb={4}>
@@ -157,7 +230,7 @@ const CreateBarang = ({ navigation }) => {
               <FormControl>
                 <FormControl.Label>Nama Barang</FormControl.Label>
                 <Select
-                  selectedValue={item.namaBarang}
+                  selectedValue={item.kodeBarang}
                   onValueChange={(value) => handleInputChange(index, 'namaBarang', value)}
                 >
                   {barangOptions.map(option => (
@@ -175,9 +248,9 @@ const CreateBarang = ({ navigation }) => {
               </FormControl>
 
               <FormControl mt={3}>
-                <FormControl.Label>Jenis Barang</FormControl.Label>
+                <FormControl.Label>Kategori Barang</FormControl.Label>
                 <Input
-                  value={item.jenisBarang}
+                  value={item.kategoriBarang}
                   isDisabled
                 />
               </FormControl>
@@ -193,10 +266,32 @@ const CreateBarang = ({ navigation }) => {
             </Box>
           ))}
 
-          <Button onPress={handleAddItem} mt={3}>Tambah Barang</Button>
-          <Button onPress={handleFormSubmit} mt={3} colorScheme="success">Simpan</Button>
+          <HStack space={3} justifyContent="space-between" mt={4}>
+            <Button onPress={handleAddItem} flex={1}>Tambah Barang</Button>
+            <Button onPress={addBarang_Keluar} flex={1} colorScheme="success">Simpan</Button>
+          </HStack>
+
+          <Text alignSelf="center" fontSize="sm" mt={4} color="gray.500">
+            Harap mengisikan Data diri dengan baik dan benar!
+          </Text>
         </VStack>
       </ScrollView>
+
+      {/* Modal for displaying errors */}
+      <Modal isOpen={modalVisible} onClose={() => setModalVisible(false)}>
+        <Modal.Content>
+          <Modal.CloseButton />
+          <Modal.Header>Error</Modal.Header>
+          <Modal.Body>
+            <Text>{formError}</Text>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button onPress={() => setModalVisible(false)}>
+              Ok
+            </Button>
+          </Modal.Footer>
+        </Modal.Content>
+      </Modal>
     </>
   );
 };

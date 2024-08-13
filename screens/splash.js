@@ -1,53 +1,50 @@
-// import { StyleSheet, View, ImageBackground } from 'react-native';
-// import React, { Component } from 'react';
-// import { getData } from '../utils/localStorage';
+import { StyleSheet, View, Image } from 'react-native';
+import React, { useEffect } from 'react';
+import { getData } from '../utils';
 
-// export default class Splash extends Component {
-//   componentDidMount() {
-//     // Menambahkan setTimeout untuk menunda navigasi selama 3 detik
-//     setTimeout(() => {
-//       this.checkUserStatus();
-//     }, 3000); // Durasi splash dalam milidetik (3 detik dalam contoh ini)
-//   }
+const Splash = ({ navigation }) => {
+  useEffect(() => {
+    const checkUserStatus = async () => {
+      try {
+        const userData = await getData('user');
+        if (userData) {
+          // Navigasi ke halaman utama (karena hanya ada 1 role yaitu user)
+          navigation.replace('Tabs');
+        } else {
+          navigation.replace('Login');
+        }
+      } catch (error) {
+        console.error('Error checking user status:', error);
+        navigation.replace('Login');
+      }
+    };
 
-//   checkUserStatus = async () => {
-//     const userData = await getData("user");
+    // Periksa status user saat komponen di-mount
+    checkUserStatus();
+  }, [navigation]);
 
-//     if (userData) {
-//       if (userData.role === 'admin') {
-//         this.props.navigation.replace('AdminTabs');
-//       } else if (userData.role === 'mitra') {
-//         this.props.navigation.replace('MekanikTabs');
-//       } else {
-//         this.props.navigation.replace('Tabs');
-//       }
-//     } else {
-//       this.props.navigation.replace('Login');
-//     }
-//   };
+  return (
+    <View style={styles.pages}>
+      <Image 
+        source={require('../assets/inventory.jpg')} 
+        style={styles.image} 
+        resizeMode="contain" 
+      />
+    </View>
+  );
+};
 
-//   render() {
-//     return (
-//       <>
-//         <ImageBackground
-//           source={require("../assets/splash.png")} // Replace with your actual image path
-//           style={styles.backgroundImage}
-//         >
-//           <View style={styles.pages}></View>
-//         </ImageBackground>
-//       </>
-//     );
-//   }
-// }
+const styles = StyleSheet.create({
+  pages: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff', // Warna latar belakang untuk splash screen
+  },
+  image: {
+    width: 200, // Sesuaikan ukuran gambar sesuai kebutuhan
+    height: 200,
+  },
+});
 
-// const styles = StyleSheet.create({
-//   pages: {
-//     flex: 1,
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-//   backgroundImage: {
-//     flex: 1,
-//     resizeMode: 'cover', // or 'stretch' or 'contain'
-// },
-// });
+export default Splash;

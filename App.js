@@ -3,20 +3,17 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { Center, NativeBaseProvider, Text } from "native-base";
+import { NativeBaseProvider, Text } from "native-base";
 import Ionicons from "@expo/vector-icons/Ionicons";
-//custscreen
+// Import custom screens
 import Home from "./screens/home";
 import Barang from "./screens/barang";
 import Profile from "./screens/profile";
 import Splash from "./screens/splash";
 import CreateBarang from "./screens/createbarang";
 import Login from "./screens/login";
-
-
-
-
-
+import Register from "./screens/register";
+import Retur from "./screens/retur";
 
 // Navigator Declaration
 const Stack = createNativeStackNavigator();
@@ -24,22 +21,25 @@ const Tab = createBottomTabNavigator();
 
 const noHead = { headerShown: false };
 
+// Custom button for the middle tab
 const CustomTabBarButton = ({ children, onPress }) => (
   <TouchableOpacity
     style={{
-      top: -30,
+      top: -25,
       justifyContent: "center",
       alignItems: "center",
-      ...styles.shadow
+      ...styles.shadow,
     }}
     onPress={onPress}
   >
     <View
       style={{
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        backgroundColor: "#24a8e0"
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: "#24a8e0",
+        justifyContent: "center",
+        alignItems: "center",
       }}
     >
       {children}
@@ -47,6 +47,7 @@ const CustomTabBarButton = ({ children, onPress }) => (
   </TouchableOpacity>
 );
 
+// Bottom Tabs Navigator
 const Tabs = () => {
   return (
     <Tab.Navigator
@@ -61,16 +62,13 @@ const Tabs = () => {
               iconName = "person";
               break;
             case "Barang":
-              iconName = "box";
-              iconStyle = focused
-                ? { color: "red", fontSize: 40 }
-                : { color: "black", fontSize: 40 }; // Change styles here
+              iconName = "cube";
               break;
           }
           return (
             <Ionicons
               name={iconName}
-              size={28}
+              size={route.name === "Barang" ? 30 : 25}
               color={focused ? "#24a8e0" : color}
             />
           );
@@ -79,7 +77,7 @@ const Tabs = () => {
         tabBarStyle: {
           alignSelf: "center",
           height: 70,
-          width: "95%",
+          width: "100%",
           borderRadius: 10,
           marginBottom: 10,
           borderTopWidth: 0,
@@ -102,7 +100,7 @@ const Tabs = () => {
           headerShown: false,
           tabBarButton: (props) => (
             <CustomTabBarButton {...props}>
-              <Ionicons name="cube" size={40} color="white" alignSelf="center" style={styles.bikeIcon} />
+              <Ionicons name="cube" size={30} color="white" />
               <Text alignSelf={"center"} style={styles.textIcon}>Barang</Text>
             </CustomTabBarButton>
           )
@@ -115,31 +113,42 @@ const Tabs = () => {
   );
 };
 
+// Main App component with Stack Navigator
 const App = () => {
   return (
     <NativeBaseProvider>
       <NavigationContainer>
-        <Stack.Navigator>
+        <Stack.Navigator initialRouteName="Splash">
+          <Stack.Screen
+            name="Splash"
+            component={Splash}
+            options={noHead}
+          />
           <Stack.Screen
             name="Tabs"
-            component={Tabs} options={noHead} />
+            component={Tabs} 
+            options={noHead} 
+          />
           <Stack.Screen
             name="Login"
             component={Login}
             options={noHead}
           />
-          {/* <Stack.Screen
-            name="Splash"
-            component={Splash}
-            options={noHead}
-          /> */}
           <Stack.Screen
             name="CreateBarang"
             component={CreateBarang}
             options={noHead}
           />
-
-
+          <Stack.Screen
+            name="Register"
+            component={Register}
+            options={noHead}
+          />
+           <Stack.Screen
+            name="Retur"
+            component={Retur}
+            options={noHead}
+          />
         </Stack.Navigator>
       </NavigationContainer>
     </NativeBaseProvider>
@@ -153,17 +162,14 @@ const styles = StyleSheet.create({
     shadowColor: "#24a8e0",
     shadowOffset: {
       width: 0,
-      height: 10,
+      height: 100,
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.5,
     elevation: 5,
   },
-  bikeIcon: {
-    marginTop: 15, // Adjust this value to change the vertical position of the icon
-  },
   textIcon: {
-    marginTop: 12,
-    // Adjust this value to change the vertical position of the icon
+    marginTop: 5,
+    color: 'white',
   },
 });
