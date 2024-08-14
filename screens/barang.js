@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { ScrollView, Linking } from 'react-native';
-import { Box, Button, Text, VStack, HStack, Center, Divider, Icon } from 'native-base';
-import { getDatabase, ref, onValue, push } from "firebase/database";
+import { Box, Button, Text, VStack, HStack, Center, Divider, Icon, Badge } from 'native-base';
+import { getDatabase, ref, onValue } from "firebase/database";
 import Header from "../components/header";
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import FIREBASE from "../actions/config/FIREBASE";
 import { getData } from "../utils";
-
 
 const Barang = ({ navigation }) => {
   const [user, setUser] = useState(null); // Store user information
@@ -20,10 +19,10 @@ const Barang = ({ navigation }) => {
 
   useEffect(() => {
     if (!user) return; // Do nothing if user is not set yet
-  
+
     const database = getDatabase();
     const BarangKeluarRef = ref(database, "Barang_Keluar");
-  
+
     const unsubscribe = onValue(BarangKeluarRef, (snapshot) => {
       const BarangKeluarData = snapshot.val();
       if (BarangKeluarData) {
@@ -34,21 +33,26 @@ const Barang = ({ navigation }) => {
           }))
           .filter(item => item.userId === user.uid) // Filter by user UID
           .map(item => {
-            // Tambahkan properti File_BeritaAcara jika statusnya 'accepted'
-            if (item.status === 'Accepted' && !item.File_BeritaAcara) {
-              item.File_BeritaAcara = 'URL_TO_PDF'; // Gantilah dengan URL PDF yang benar
+            // Tambahkan properti File_BeritaAcara dan Notes jika statusnya 'Accepted'
+            if (item.status === 'Accepted') {
+              if (!item.File_BeritaAcara) {
+                item.File_BeritaAcara = 'URL_TO_PDF'; // Gantilah dengan URL PDF yang benar
+              }
+              if (!item.Catatan) {
+                item.Catatan = 'Catatan terkait barang ini'; // Gantilah dengan catatan yang sesuai
+              }
             }
             return item;
           });
-  
+
         setBarangData(BarangArray);
       }
       setLoading(false);
     });
-  
+
     return () => unsubscribe();
   }, [user]);
-  
+
   const getUserData = async () => {
     try {
       const userData = await getData("user");
@@ -76,29 +80,6 @@ const Barang = ({ navigation }) => {
     }));
   };
 
-  const handleReturn = (item, barang) => {
-    const database = getDatabase();
-    const ReturRef = ref(database, "Barang_Retur");
-
-    const returData = {
-      Kode_Barang: barang.kode_barang,
-      Nama_Barang: barang.nama_barang,
-      Jumlah_Barang: barang.jumlah_barang,
-      Kategori_Barang: barang.kategori_barang,
-      Pihak_Peminjam: item.Nama_PihakPeminjam,
-      Tanggal_Retur: new Date().toISOString(),
-    };
-
-    push(ReturRef, returData)
-      .then(() => {
-        alert("Barang berhasil diretur!");
-      })
-      .catch((error) => {
-        console.error("Error returning barang:", error);
-        alert("Terjadi kesalahan saat melakukan retur.");
-      });
-  };
-
   const handleViewPDF = (url) => {
     Linking.openURL(url).catch((err) => console.error('An error occurred', err));
   };
@@ -106,7 +87,7 @@ const Barang = ({ navigation }) => {
   return (
     <>
       <Header title={"Inventory UID JATIM"} />
-      <ScrollView contentContainerStyle={{ padding: 15, backgroundColor: "#F4F4F4" }}>
+      <ScrollView contentContainerStyle={{ padding: 15, backgroundColor: "#E5E5E5" }}>
         <Box
           flexDirection="row"
           justifyContent="space-between"
@@ -115,12 +96,13 @@ const Barang = ({ navigation }) => {
           backgroundColor="#004aad"
           borderRadius="lg"
           mb={4}
+          shadow={2}
         >
-          <Text fontSize="xl" color="white">Data Barang Keluar</Text>
-          <Button 
-            onPress={() => navigation.navigate('CreateBarang')} 
+          <Text fontSize="xl" color="white" fontWeight="bold">Data Barang Keluar</Text>
+          <Button
+            onPress={() => navigation.navigate('CreateBarang')}
             backgroundColor="white"
-            _text={{ color: "#004aad" }}
+            _text={{ color: "#004aad", fontWeight: "bold" }}
             leftIcon={<Icon as={MaterialIcons} name="add" size="sm" color="#004aad" />}
           >
             Ajukan Barang
@@ -134,44 +116,70 @@ const Barang = ({ navigation }) => {
             </Center>
           ) : barangData.length > 0 ? (
             barangData.map(item => (
-              <Box key={item.id} padding={4} borderRadius="lg" backgroundColor="white" shadow={2} mb={4}>
+              <Box key={item.id} padding={4} borderRadius="lg" backgroundColor="white" shadow={3} mb={4}>
                 <VStack space={2}>
-                  <HStack justifyContent="space-between">
-                    <Text fontWeight="bold">Status Pengajuan: {item.status || "Tidak Ada"}</Text>
-                    <Button 
-                      variant="ghost" 
+                  <HStack
+                    justifyContent="space-between"
+                    alignItems="center"
+                    px={4}
+                    py={2}
+                    borderBottomWidth={1}
+                    borderColor="gray.200"
+                    rounded="md"
+                  >
+                    <HStack alignItems="center" ml={-4}>
+                      <Text fontWeight="bold" fontSize="lg" color="gray.700" mr={2}>
+                        {item.Kategori_Peminjaman}
+                      </Text>
+                      <Badge
+                        colorScheme={item.status === 'Accepted' ? "green" : "red"}
+                        variant="solid"
+                      >
+                        {item.status}
+                      </Badge>
+                    </HStack>
+
+                    <Button
+                      variant="ghost"
                       onPress={() => toggleExpand(item.id)}
-                      _text={{ color: "#004aad" }}
+                      _text={{ color: "#004aad", fontSize: "md" }}
                       leftIcon={
-                        <Icon 
-                          as={MaterialIcons} 
-                          name={expanded[item.id] ? "expand-less" : "expand-more"} 
-                          size="sm" 
-                          color="#004aad" 
+                        <Icon
+                          as={MaterialIcons}
+                          name={expanded[item.id] ? "expand-less" : "expand-more"}
+                          size="lg"
+                          color="#004aad"
                         />
                       }
-                    >
-                      {expanded[item.id] ? "Kurangi" : "Lebih"}
-                    </Button>
+                      size="sm"
+                      _hover={{ bg: "gray.100" }}
+                    />
                   </HStack>
 
-                  {item.status === 'Accepted' && item.File_BeritaAcara && (
+
+                  {item.status === 'Accepted' && (
                     <>
                       <Text>File Berita Acara:</Text>
-                      <Button 
-                        mt={2}
-                        backgroundColor="#004aad"
-                        _text={{ color: "white" }}
-                        onPress={() => handleViewPDF(item.File_BeritaAcara)}
-                        leftIcon={<Icon as={MaterialIcons} name="picture-as-pdf" size="sm" color="white" />}
-                      >
-                        Lihat File
-                      </Button>
+                      {item.File_BeritaAcara ? (
+                        <Button
+                          mt={2}
+                          backgroundColor="#004aad"
+                          _text={{ color: "white" }}
+                          onPress={() => handleViewPDF(item.File_BeritaAcara)}
+                          leftIcon={<Icon as={MaterialIcons} name="picture-as-pdf" size="sm" color="white" />}
+                        >
+                          Lihat File
+                        </Button>
+                      ) : (
+                        <Text>Tidak ada File Berita Acara</Text>
+                      )}
+
+                      <Text mt={2}>Catatan: {item.Catatan || "Tidak ada catatan"}</Text>
                     </>
                   )}
 
                   <Text>Pihak Peminjam: {item.Nama_PihakPeminjam}</Text>
-                  <Text>Tanggal Pengajuan: {item.tanggal_peminjamanbarang || item.tanggal_peminjamanbarang}</Text>
+                  <Text>Tanggal Pengajuan: {item.tanggal_peminjamanbarang || "Tidak Ada"}</Text>
                   <Text>Total Barang: {item.barang ? item.barang.length : 0}</Text>
 
                   {expanded[item.id] && (
@@ -187,7 +195,13 @@ const Barang = ({ navigation }) => {
                             mt={2}
                             backgroundColor="orange.400"
                             _text={{ color: "white" }}
-                            onPress={() => handleReturn(item, barang)}
+                            onPress={() => navigation.navigate('CreateRetur', {
+                              Pihak_Pemohon: item.Nama_PihakPeminjam,
+                              Kode_Barang: barang.kode_barang,
+                              Kategori_Barang: barang.kategori_barang,
+                              Nama_Barang: barang.nama_barang,
+                            })}
+                            leftIcon={<Icon as={FontAwesome5} name="undo" size="sm" color="white" />}
                           >
                             Retur Barang
                           </Button>

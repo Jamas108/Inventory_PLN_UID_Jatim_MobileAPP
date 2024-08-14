@@ -14,6 +14,7 @@ import CreateBarang from "./screens/createbarang";
 import Login from "./screens/login";
 import Register from "./screens/register";
 import Retur from "./screens/retur";
+import CreateRetur from "./screens/createRetur";
 
 // Navigator Declaration
 const Stack = createNativeStackNavigator();
@@ -147,6 +148,11 @@ const App = () => {
            <Stack.Screen
             name="Retur"
             component={Retur}
+            options={noHead}
+          />
+          <Stack.Screen
+            name="CreateRetur"
+            component={CreateRetur}
             options={noHead}
           />
         </Stack.Navigator>

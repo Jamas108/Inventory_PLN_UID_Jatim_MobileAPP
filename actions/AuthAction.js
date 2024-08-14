@@ -82,15 +82,6 @@ export const updateUserData = async (uid, updatedData) => {
   }
 };
 
-export const addBarang_Keluar = async (data) => {
-  try {
-    await FIREBASE.database().ref("barangKeluar_users").push(data);
-    console.log("Barang_Keluar added successfully");
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const getBarang_KeluarData = () => {
   const obatRef = FIREBASE.database().ref("BarangKeluar");
 
@@ -107,20 +98,6 @@ export const getBarang_KeluarData = () => {
 };
 
 
-export const addRetur_Barang = () => {
-  const obatRef = FIREBASE.database().ref("Retur_Barang");
-
-  obatRef.once("value")
-    .then((snapshot) => {
-      // The data is available in snapshot.val()
-      const data = snapshot.val();
-      console.log("Data retrieved successfully:", data);
-      // You can update your React component state with the retrieved data here
-    })
-    .catch((error) => {
-      console.error("Error retrieving data: ", error);
-    });
-};
 
 
 // export const getObatData = () => {
