@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ScrollView } from 'react-native';
-import { Box, Button, Text, VStack, Input, FormControl, HStack, Modal } from 'native-base';
+import { Box, Button, Text, VStack, Input, FormControl, HStack, Modal, Icon, Card, Divider, Center, useToast, } from 'native-base';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import FIREBASE from '../actions/config/FIREBASE';
@@ -8,7 +9,7 @@ import Header from '../components/header';
 import { getData } from '../utils';
 
 const CreateRetur = ({ route, navigation }) => {
-  const { Pihak_Pemohon, Kode_Barang, Kategori_Barang, Nama_Barang } = route.params;
+  const { Pihak_Pemohon, Kode_Barang, Kategori_Barang, Nama_Barang, Garansi_Barang_Awal, Garansi_Barang_Akhir } = route.params;
 
   const [jumlahBarang, setJumlahBarang] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
@@ -20,9 +21,11 @@ const CreateRetur = ({ route, navigation }) => {
   const [image, setImage] = useState(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
 
+  const toast = useToast();
+
   useEffect(() => {
-    requestPermission(); // Request permission for accessing the gallery
-    getUserData(); // Fetch user data
+    requestPermission();
+    getUserData();
   }, []);
 
   const requestPermission = async () => {
@@ -74,7 +77,6 @@ const CreateRetur = ({ route, navigation }) => {
     }
   };
 
-
   const pickImage = async () => {
     try {
       let result = await ImagePicker.launchImageLibraryAsync({
@@ -96,7 +98,6 @@ const CreateRetur = ({ route, navigation }) => {
       setModalVisible(true);
     }
   };
-  
 
   const uploadFile = async (uri, storagePath) => {
     try {
@@ -130,20 +131,28 @@ const CreateRetur = ({ route, navigation }) => {
         id: retur_id,
         userId: user.uid,
         Pihak_Pemohon: Pihak_Pemohon,
-        Kode_Barang: Kode_Barang,
-        Kategori_Barang: Kategori_Barang,
+        kode_Barang: Kode_Barang,
+        kategori_barang: Kategori_Barang,
+        garansi_barang_awal: Garansi_Barang_Awal,
+        garansi_barang_akhir: Garansi_Barang_Akhir,
         Kategori_Retur: '',
-        Nama_Barang: Nama_Barang,
+        nama_Barang: Nama_Barang,
         Tanggal_Retur: tanggalRetur,
-        Jumlah_Barang: jumlahBarang,
+        jumlah_barang: jumlahBarang,
         Deskripsi: deskripsi,
         Surat_Retur: fileSuratUrl,
-        Gambar_Retur : imageUrl,
+        Gambar_Retur: imageUrl,
         status: 'Pending',
-        Created_At: new Date().toISOString(),
       };
 
       await returRef.set(data);
+
+      const notificationData = {
+        title: 'Pending Pengajuan Retur Barang',
+        message: `Pengajuan Retur dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
+        status: 'unread',
+    };
+    await FIREBASE.database().ref('notifications').push(notificationData);
 
       setSuccessModalVisible(true);
     } catch (error) {
@@ -154,108 +163,142 @@ const CreateRetur = ({ route, navigation }) => {
 
   const handleSuccessClose = () => {
     setSuccessModalVisible(false);
-    navigation.goBack(); // Navigate back to the retur page
+    navigation.goBack();
   };
 
   return (
     <>
       <Header title={"Retur Barang"} withBack={true} />
-      <ScrollView contentContainerStyle={{ padding: 10 }}>
-        <VStack space={4} width="100%">
+      <ScrollView contentContainerStyle={{ padding: 15, backgroundColor: '#f7f8fc' }}>
+        <VStack space={5} width="100%">
+          <Card borderRadius="lg" shadow={2}>
+            <Box p={4}>
+              <Text fontSize="lg" fontWeight="bold" mb={4}>Silahkan Input Data Barangnya :</Text>
+              <Divider my={2} />
+              <VStack space={4}>
+                <FormControl>
+                  <FormControl.Label>Nama Barang</FormControl.Label>
+                  <Input
+                    value={Nama_Barang}
+                    isDisabled
+                    bg="gray.100"
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-          <Box bg="white" p={4} borderRadius="lg" shadow={2} mb={4}>
-            <Text fontSize="md" mb={2} fontWeight="bold">Detail Barang</Text>
+                <FormControl>
+                  <FormControl.Label>Kode Barang</FormControl.Label>
+                  <Input
+                    value={Kode_Barang}
+                    isDisabled
+                    bg="gray.100"
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Nama Barang</FormControl.Label>
-              <Input
-                value={Nama_Barang}
-                isDisabled
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Kategori Barang</FormControl.Label>
+                  <Input
+                    value={Kategori_Barang}
+                    isDisabled
+                    bg="gray.100"
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Kode Barang</FormControl.Label>
-              <Input
-                value={Kode_Barang}
-                isDisabled
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Tanggal Retur</FormControl.Label>
+                  <Input
+                    placeholder="Masukkan Tanggal Retur"
+                    value={tanggalRetur}
+                    onChangeText={(value) => setTanggalRetur(value)}
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Kategori Barang</FormControl.Label>
-              <Input
-                value={Kategori_Barang}
-                isDisabled
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Jumlah Barang</FormControl.Label>
+                  <Input
+                    type="number"
+                    value={jumlahBarang}
+                    onChangeText={(value) => setJumlahBarang(value)}
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Tanggal Retur</FormControl.Label>
-              <Input
-                placeholder="Masukkan Tanggal Retur"
-                value={tanggalRetur}
-                onChangeText={(value) => setTanggalRetur(value)}
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Catatan</FormControl.Label>
+                  <Input
+                    value={deskripsi}
+                    onChangeText={(value) => setDeskripsi(value)}
+                    borderRadius="md"
+                  />
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Jumlah Barang</FormControl.Label>
-              <Input
-                type="number"
-                value={jumlahBarang}
-                onChangeText={(value) => setJumlahBarang(value)}
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Upload Surat Jalan (PDF)</FormControl.Label>
+                  <Button 
+                    leftIcon={<Icon as={Ionicons} name="document-attach-outline" size="sm" />} 
+                    onPress={pickDocument}
+                    borderRadius="md"
+                    colorScheme="primary"
+                    variant="outline"
+                    >
+                    Pilih File PDF
+                  </Button>
+                  {fileSurat ? (
+                    <Text mt={2} color="green.500">File terpilih: {fileSurat.name}</Text>
+                  ) : (
+                    <Text mt={2} color="red.500">Belum ada file yang dipilih</Text>
+                  )}
+                </FormControl>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Catatan</FormControl.Label>
-              <Input
-                value={deskripsi}
-                onChangeText={(value) => setDeskripsi(value)}
-              />
-            </FormControl>
+                <FormControl>
+                  <FormControl.Label>Upload Gambar</FormControl.Label>
+                  <Button 
+                    leftIcon={<Icon as={Ionicons} name="image-outline" size="sm" />} 
+                    onPress={pickImage}
+                    borderRadius="md"
+                    colorScheme="primary"
+                    variant="outline"
+                    >
+                    Pilih Gambar
+                  </Button>
+                  {image ? (
+                    <Text mt={2} color="green.500">Gambar terpilih: {image.split('/').pop()}</Text>
+                  ) : (
+                    <Text mt={2} color="red.500">Belum ada gambar yang dipilih</Text>
+                  )}
+                </FormControl>
+              </VStack>
+            </Box>
+          </Card>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Upload Surat Jalan (PDF)</FormControl.Label>
-              <Button onPress={pickDocument}>Pilih File PDF</Button>
-              {fileSurat ? (
-                <Text mt={2} color="green.500">File terpilih: {fileSurat.name}</Text>
-              ) : (
-                <Text mt={2} color="red.500">Belum ada file yang dipilih</Text>
-              )}
-            </FormControl>
+          <Center mt={3}>
+            <Button 
+              onPress={addRetur_Barang} 
+              colorScheme="success" 
+              borderRadius="md"
+              leftIcon={<Icon as={MaterialIcons} name="send" size="sm" />}>
+              Submit
+            </Button>
+          </Center>
 
-            <FormControl mt={3}>
-              <FormControl.Label>Upload Gambar</FormControl.Label>
-              <Button onPress={pickImage}>Pilih Gambar</Button>
-              {image ? (
-                <Text mt={2} color="green.500">Gambar terpilih: {image.split('/').pop()}</Text>
-              ) : (
-                <Text mt={2} color="red.500">Belum ada gambar yang dipilih</Text>
-              )}
-            </FormControl>
-          </Box>
-
-          <HStack space={3} justifyContent="space-between" mt={4}>
-            <Button onPress={addRetur_Barang} flex={1} colorScheme="success">Submit</Button>
-          </HStack>
-
-          <Text alignSelf="center" fontSize="sm" mt={4} color="gray.500">
+          <Text alignSelf="center" fontSize="sm" mt={2} mb={4} color="gray.600">
             Harap mengisikan Data dengan baik dan benar!
           </Text>
         </VStack>
       </ScrollView>
 
       <Modal isOpen={modalVisible} onClose={() => setModalVisible(false)}>
-        <Modal.Content>
+        <Modal.Content maxWidth="400px">
           <Modal.CloseButton />
           <Modal.Header>Error</Modal.Header>
           <Modal.Body>
             <Text>{formError}</Text>
           </Modal.Body>
           <Modal.Footer>
-            <Button onPress={() => setModalVisible(false)}>
+            <Button onPress={() => setModalVisible(false)} borderRadius="md">
               Ok
             </Button>
           </Modal.Footer>
@@ -263,14 +306,14 @@ const CreateRetur = ({ route, navigation }) => {
       </Modal>
 
       <Modal isOpen={successModalVisible} onClose={handleSuccessClose}>
-        <Modal.Content>
+        <Modal.Content maxWidth="400px">
           <Modal.CloseButton />
           <Modal.Header>Berhasil</Modal.Header>
           <Modal.Body>
             <Text>Retur barang berhasil diajukan</Text>
           </Modal.Body>
           <Modal.Footer>
-            <Button onPress={handleSuccessClose}>
+            <Button onPress={handleSuccessClose} borderRadius="md">
               Ok
             </Button>
           </Modal.Footer>

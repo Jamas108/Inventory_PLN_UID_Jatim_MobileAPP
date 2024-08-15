@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, Alert } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Box, Button, Text, VStack, Input, Select, FormControl, HStack, Modal } from 'native-base';
 import FIREBASE from '../actions/config/FIREBASE';
 import Header from '../components/header';
@@ -19,6 +19,7 @@ const CreateBarang = ({ navigation }) => {
   const [fileSurat, setFileSurat] = useState(null);
   const [user, setUser] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
 
   const Id_Kategori_PeminjamanOptions = [
     { id: 'Insidentil', name: 'Insidentil' },
@@ -26,9 +27,25 @@ const CreateBarang = ({ navigation }) => {
   ];
 
   useEffect(() => {
-    getBarangMasuk();
+    const fetchData = async () => {
+      setLoading(true);
+      const barangMasukData = await getBarangMasuk();
+      const returBarangData = await getReturBarang();
+
+      // Tambahkan awalan yang mengidentifikasi sumber data
+      const combinedData = [
+        ...barangMasukData.map(item => ({ ...item, source: 'masuk' })),
+        ...returBarangData.map(item => ({ ...item, source: 'retur' }))
+      ];
+
+      setBarangOptions(combinedData);
+      setLoading(false);
+    };
+
+    fetchData();
     getUserData();
   }, []);
+
 
   const getBarangMasuk = async () => {
     try {
@@ -47,13 +64,40 @@ const CreateBarang = ({ navigation }) => {
             }
           }
         });
-        setBarangOptions(acceptedBarang);
+        return acceptedBarang;
       } else {
-        setBarangOptions([]);
+        return [];
       }
     } catch (error) {
       console.error('Error fetching barang masuk data:', error);
-      setBarangOptions([]);
+      showModal('Error', 'Terjadi kesalahan saat mengambil data barang masuk.');
+      return [];
+    }
+  };
+
+  const getReturBarang = async () => {
+    try {
+      const returRef = FIREBASE.database().ref('Retur_Barang');
+      const snapshot = await returRef.once('value');
+      const returBarangData = snapshot.val();
+
+      if (returBarangData) {
+        const returBarang = [];
+
+        Object.values(returBarangData).forEach(item => {
+          // Filter barang dengan kategori_retur "Bekas Handal"
+          if (item.Kategori_Retur === "Bekas Handal") {
+            returBarang.push(item);
+          }
+        });
+        return returBarang;
+      } else {
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching retur barang data:', error);
+      showModal('Error', 'Terjadi kesalahan saat mengambil data retur barang.');
+      return [];
     }
   };
 
@@ -72,6 +116,7 @@ const CreateBarang = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
+      showModal('Error', 'Terjadi kesalahan saat mengambil data pengguna.');
     }
   };
 
@@ -84,13 +129,13 @@ const CreateBarang = ({ navigation }) => {
       if (result && !result.canceled) {
         const selectedFile = result.assets ? result.assets[0] : result;
         setFileSurat(selectedFile);
-        Alert.alert('File Terpilih', `File terpilih: ${selectedFile.name}`);
+        showModal('File Terpilih', `File terpilih: ${selectedFile.name}`);
       } else {
-        Alert.alert('Error', 'Tidak ada file yang dipilih.');
+        showModal('Error', 'Tidak ada file yang dipilih.');
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Error', 'Terjadi kesalahan saat memilih file.');
+      showModal('Error', 'Terjadi kesalahan saat memilih file.');
     }
   };
 
@@ -121,6 +166,7 @@ const CreateBarang = ({ navigation }) => {
       items.some(item => !item.namaBarang || !item.jumlahBarang)) {
       setFormError('Semua field wajib diisi.');
       setModalVisible(true);
+      setModalMessage('Semua field wajib diisi.');
       return;
     }
 
@@ -143,6 +189,7 @@ const CreateBarang = ({ navigation }) => {
         File_Surat: fileSuratURL,
         status: 'Pending',
         barang: items.map(item => {
+          const selectedBarang = barangOptions.find(option => option.kode_barang === item.kodeBarang);
           const barang_id = FIREBASE.database().ref().push().key;
           return {
             id: barang_id,
@@ -151,17 +198,27 @@ const CreateBarang = ({ navigation }) => {
             jenis_barang: item.jenisBarang || null,
             kategori_barang: item.kategoriBarang || null,
             jumlah_barang: item.jumlahBarang || null,
+            garansi_barang_awal: selectedBarang ? selectedBarang.Garansi_Barang_Awal : null,
+            garansi_barang_akhir: selectedBarang ? selectedBarang.Garansi_Barang_Akhir : null,
           };
         }),
       };
 
       await newRef.set(data);
 
-      Alert.alert('Berhasil', `Barang berhasil diajukan`);
+      // Menambahkan notifikasi ke database `notifications`
+      const notificationData = {
+        title: 'Pending Pengajuan Barang Keluar',
+        message: `Pengajuan Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
+        status: 'unread',
+      };
+      await FIREBASE.database().ref('notifications').push(notificationData);
+
+      showModal('Berhasil', 'Barang berhasil diajukan.');
       navigation.goBack();
     } catch (error) {
       console.error('Error saving data:', error);
-      Alert.alert('Error', 'Terjadi kesalahan saat menyimpan data.');
+      showModal('Error', 'Terjadi kesalahan saat menyimpan data.');
     }
   };
 
@@ -172,32 +229,40 @@ const CreateBarang = ({ navigation }) => {
   const handleInputChange = (index, name, value) => {
     const newItems = [...items];
   
-    if (name === 'namaBarang') {
-      const selectedBarang = barangOptions.find(item => item.kode_barang === value);
-      if (selectedBarang) {
-        newItems[index].namaBarang = selectedBarang.nama_barang;
-        newItems[index].kodeBarang = selectedBarang.kode_barang;
-        newItems[index].jenisBarang = selectedBarang.jenis_barang;
-        newItems[index].kategoriBarang = selectedBarang.kategori_barang;
-        newItems[index].jumlahBarang = ''; // Reset jumlah barang saat nama barang dipilih
-        newItems[index].maxJumlahBarang = selectedBarang.jumlah_barang; // Tambahkan properti baru untuk jumlah maksimal
-      }
-    } else if (name === 'jumlahBarang') {
-      // Periksa apakah jumlah yang diinput lebih besar dari jumlah barang yang tersedia
-      const maxJumlahBarang = newItems[index].maxJumlahBarang;
-      if (Number(value) > maxJumlahBarang) {
-        Alert.alert('Error', `Jumlah barang yang diinput melebihi stok yang tersedia (${maxJumlahBarang} unit).`);
-        newItems[index].jumlahBarang = maxJumlahBarang.toString(); // Setel jumlah barang ke nilai maksimal
+    if (index >= 0 && index < newItems.length) {
+      if (name === 'namaBarang') {
+        const selectedBarang = barangOptions.find(item => item.kode_barang === value);
+        if (selectedBarang) {
+          newItems[index].namaBarang = selectedBarang.nama_barang;
+          newItems[index].kodeBarang = selectedBarang.kode_barang;
+          newItems[index].jenisBarang = selectedBarang.jenis_barang;
+          newItems[index].kategoriBarang = selectedBarang.kategori_barang;
+          newItems[index].jumlahBarang = '';
+          newItems[index].maxJumlahBarang = selectedBarang.Jumlah_Barang;
+        }
+      } else if (name === 'jumlahBarang') {
+        const maxJumlahBarang = newItems[index].maxJumlahBarang;
+        if (Number(value) > maxJumlahBarang) {
+          showModal('Error', `Jumlah barang yang diinput melebihi stok yang tersedia (${maxJumlahBarang} unit).`);
+          newItems[index].jumlahBarang = maxJumlahBarang.toString();
+        } else {
+          newItems[index].jumlahBarang = value;
+        }
       } else {
-        newItems[index].jumlahBarang = value;
+        newItems[index][name] = value;
       }
+  
+      setItems(newItems);
     } else {
-      newItems[index][name] = value;
+      console.error(`Item dengan indeks ${index} tidak ditemukan di array items.`);
     }
-  
-    setItems(newItems);
   };
-  
+
+
+  const showModal = (title, message) => {
+    setModalMessage(message);
+    setModalVisible(true);
+  };
 
   return (
     <>
@@ -258,7 +323,7 @@ const CreateBarang = ({ navigation }) => {
               items.map((item, index) => (
                 <Box key={index} bg="gray.50" p={4} borderRadius="lg" shadow={1} mb={4}>
                   <Text fontSize="md" mb={2} fontWeight="bold">Barang {index + 1}</Text>
-                  
+            
                   <FormControl mb={3}>
                     <FormControl.Label>Nama Barang</FormControl.Label>
                     <Select
@@ -269,15 +334,14 @@ const CreateBarang = ({ navigation }) => {
                     >
                       {barangOptions.map(option => (
                         <Select.Item
-                          key={option.kode_barang}
-                          label={`${option.nama_barang} - ${option.jenis_barang} - ${option.jumlah_barang} unit`}
-                          value={option.kode_barang}
+                          key={`${option.source}-${option.Kode_Barang}`}
+                          label={`${option.nama_barang} - ${option.Kategori_Barang} - ${option.Jumlah_Barang} unit ${option.Kategori_Retur ? `(Retur - ${option.Kategori_Retur})` : `(Baru)`}`}
+                          value={option.Kode_Barang}
                         />
                       ))}
                     </Select>
                   </FormControl>
-
-
+            
                   <HStack space={3} mt={3}>
                     <FormControl flex={1}>
                       <FormControl.Label>Kode Barang</FormControl.Label>
@@ -296,7 +360,7 @@ const CreateBarang = ({ navigation }) => {
                       />
                     </FormControl>
                   </HStack>
-
+            
                   <FormControl mt={3}>
                     <FormControl.Label>Kategori Barang</FormControl.Label>
                     <Input
@@ -305,7 +369,7 @@ const CreateBarang = ({ navigation }) => {
                       bg="gray.100"
                     />
                   </FormControl>
-
+            
                   <FormControl mt={3}>
                     <FormControl.Label>Jumlah Barang</FormControl.Label>
                     <Input
@@ -322,6 +386,7 @@ const CreateBarang = ({ navigation }) => {
               <Text color="red.500" textAlign="center" mt={5}>Tidak ada barang</Text>
             )}
 
+
             <HStack space={3} justifyContent="space-between" mt={4}>
               <Button onPress={handleAddItem} flex={1} colorScheme="blue">Tambah Barang</Button>
               <Button onPress={addBarang_Keluar} flex={1} colorScheme="green">Simpan</Button>
@@ -337,9 +402,9 @@ const CreateBarang = ({ navigation }) => {
       <Modal isOpen={modalVisible} onClose={() => setModalVisible(false)}>
         <Modal.Content>
           <Modal.CloseButton />
-          <Modal.Header>Error</Modal.Header>
+          <Modal.Header>Informasi</Modal.Header>
           <Modal.Body>
-            <Text>{formError}</Text>
+            <Text>{modalMessage}</Text>
           </Modal.Body>
           <Modal.Footer>
             <Button onPress={() => setModalVisible(false)} colorScheme="blue">

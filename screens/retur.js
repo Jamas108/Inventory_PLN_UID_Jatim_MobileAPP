@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ScrollView } from "react-native";
-import { Box, Button, Text, VStack, HStack, Center, Icon } from "native-base";
+import { Box, Button, Text, VStack, HStack, Center, Icon, Badge } from "native-base";
 import { getDatabase, ref, onValue } from "firebase/database";
 import Header from "../components/header";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -92,20 +92,41 @@ const Retur = ({ navigation }) => {
             returData.map((item) => (
               <Box key={item.id} padding={4} borderRadius="lg" backgroundColor="white" shadow={2} mb={4}>
                 <VStack space={2}>
-                  <HStack justifyContent="space-between">
-                    <Text fontWeight="bold">Status Retur: {item.status || "Tidak Ada"}</Text>
+                <HStack
+                    justifyContent="space-between"
+                    alignItems="center"
+                    px={4}
+                    py={2}
+                    borderBottomWidth={1}
+                    borderColor="gray.200"
+                    rounded="md"
+                  >
+                    <HStack alignItems="center" ml={-4}>
+                      <Text fontWeight="bold" fontSize="lg" color="gray.700" mr={2}>
+                        Status Retur:
+                      </Text>
+                      <Badge
+                        colorScheme={item.status === 'Accepted' ? "green" : "red"}
+                        variant="solid"
+                      >
+                        {item.status}
+                      </Badge>
+                    </HStack>
+
                     <Button
                       variant="ghost"
                       onPress={() => toggleExpand(item.id)}
-                      _text={{ color: "#004aad" }}
+                      _text={{ color: "#004aad", fontSize: "md" }}
                       leftIcon={
                         <Icon
                           as={MaterialIcons}
                           name={expanded[item.id] ? "expand-less" : "expand-more"}
-                          size="sm"
+                          size="lg"
                           color="#004aad"
                         />
                       }
+                      size="sm"
+                      _hover={{ bg: "gray.100" }}
                     />
                   </HStack>
 

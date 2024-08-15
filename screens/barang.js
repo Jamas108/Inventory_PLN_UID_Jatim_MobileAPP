@@ -197,9 +197,11 @@ const Barang = ({ navigation }) => {
                             _text={{ color: "white" }}
                             onPress={() => navigation.navigate('CreateRetur', {
                               Pihak_Pemohon: item.Nama_PihakPeminjam,
-                              Kode_Barang: barang.kode_barang,
-                              Kategori_Barang: barang.kategori_barang,
-                              Nama_Barang: barang.nama_barang,
+                              kode_barang: barang.kode_barang,
+                              kategori_barang: barang.kategori_barang,
+                              nama_barang: barang.nama_barang,
+                              garansi_barang_awal: barang.garansi_barang_awal,
+                              garansi_barang_akhir: barang.garansi_barang_akhir,
                             })}
                             leftIcon={<Icon as={FontAwesome5} name="undo" size="sm" color="white" />}
                           >
