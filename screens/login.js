@@ -1,86 +1,114 @@
-import React, { useState } from "react";
-import { Box, VStack, Input, Button, Heading, Text, Icon, Pressable } from "native-base";
-import { MaterialIcons } from "@expo/vector-icons";
-import Header from "../components/header";
-import axios from 'axios'; 
+import { Text, Button, Box, VStack, Input, Heading, FormControl, Pressable, StatusBar, Image, Center } from "native-base";
+import { useState } from "react";
+import { loginUser } from "../actions/AuthAction";
+import { storeData } from "../utils";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Login = ({ navigation }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [formError, setFormError] = useState('');
 
-    const handleLogin = async () => {
-        try {
-            const response = await axios.get('http://10.0.2.2:3000/login', {
-                email: email,
-                password: password,
-            });
-
-            if (response.data.success) {
-                // Store user data or token if needed
-                navigation.navigate('Home'); // Navigate to the home screen on successful login
-            } else {
-                setErrorMessage(response.data.message); // Set error message from the response
-            }
-        } catch (error) {
-            console.error(error);
-            setErrorMessage('An error occurred. Please try again.'); // Set generic error message
+  const login = async () => {
+    if (email && password) {
+      try {
+        const user = await loginUser(email, password);
+        if (user.status === 'admin') {
+          await storeData('adminStatus', true);
+          navigation.replace('AdminTabs');
+        } else {
+          await storeData('adminStatus', false);
+          navigation.replace('Tabs');
         }
-    };
+      } catch (error) {
+        setFormError('Email atau Password salah, Harap masukan Email atau Password dengan benar');
+      }
+    } else {
+      setFormError('Harap isi form login dengan lengkap dan benar');
+    }
+  };
 
-    return (
-        <>
-            <Header title="Login" />
-            <Box flex={1} p={4} bg="white" justifyContent="center" alignItems="center">
-                <VStack space={4} width="90%" maxW="300px">
-                    <Heading size="lg" textAlign="center" color="blue.500">
-                        Selamat Datang Kembali
-                    </Heading>
-                    <Text textAlign="center" color="gray.500">
-                        Silakan masuk untuk melanjutkan
-                    </Text>
-                    <Input
-                        placeholder="Email"
-                        variant="outline"
-                        value={email}
-                        onChangeText={text => setEmail(text)}
-                        InputLeftElement={
-                            <Icon as={<MaterialIcons name="email" />} size={5} ml="2" color="gray.500" />
-                        }
-                    />
-                    <Input
-                        placeholder="Password"
-                        variant="outline"
-                        value={password}
-                        onChangeText={text => setPassword(text)}
-                        type={showPassword ? "text" : "password"}
-                        InputLeftElement={
-                            <Icon as={<MaterialIcons name="lock" />} size={5} ml="2" color="gray.500" />
-                        }
-                        InputRightElement={
-                            <Pressable onPress={() => setShowPassword(!showPassword)}>
-                                <Icon
-                                    as={<MaterialIcons name={showPassword ? "visibility" : "visibility-off"} />}
-                                    size={5}
-                                    mr="2"
-                                    color="gray.500"
-                                />
-                            </Pressable>
-                        }
-                    />
-                    {errorMessage ? (
-                        <Text color="red.500" textAlign="center">
-                            {errorMessage}
-                        </Text>
-                    ) : null}
-                    <Button mt={4} size="lg" colorScheme="blue" onPress={handleLogin}>
-                        Masuk
-                    </Button>
-                </VStack>
-            </Box>
-        </>
-    );
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+      <StatusBar barStyle="dark-content" />
+      <Center flex={1} mb={10}>
+        <Image
+          source={require("../assets/logo.png")}
+          w={100}
+          h={100}
+          alt="Logo"
+          mb={8}
+        />
+        <Box
+          width="85%"
+          borderRadius={10}
+          bgColor="#fff"
+          shadow={2}
+          p={8}
+          alignItems="center"
+        >
+          <Heading fontSize="xl" color="#004aad" mb={4}>
+            Login
+          </Heading>
+          <VStack space={5} width="100%">
+            <FormControl isInvalid={!!formError}>
+              <FormControl.Label>
+                <Text fontSize="md" color="#004aad">Email</Text>
+              </FormControl.Label>
+              <Input
+                h={12}
+                borderRadius={8}
+                borderWidth={1}
+                fontSize="md"
+                bgColor="#E1E8F0"
+                borderColor="#004aad"
+                placeholder="Masukkan Email"
+                value={email}
+                onChangeText={setEmail}
+              />
+            </FormControl>
+
+            <FormControl isInvalid={!!formError}>
+              <FormControl.Label>
+                <Text fontSize="md" color="#004aad">Password</Text>
+              </FormControl.Label>
+              <Input
+                h={12}
+                borderRadius={8}
+                borderWidth={1}
+                fontSize="md"
+                bgColor="#E1E8F0"
+                borderColor="#004aad"
+                placeholder="Masukkan Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              {formError ? (
+                <FormControl.ErrorMessage>{formError}</FormControl.ErrorMessage>
+              ) : null}
+            </FormControl>
+
+            <Button
+              h={12}
+              borderRadius={8}
+              bgColor="#FFCC00"
+              _text={{ color: "#004aad", fontWeight: "bold" }}
+              onPress={login}
+            >
+              Login
+            </Button>
+
+            <Pressable onPress={() => navigation.navigate("Register")}>
+              <Text color="#004aad" fontSize="sm" textAlign="center" mt={2}>
+                Belum memiliki akun? <Text fontWeight="bold" underline>Registrasi</Text>
+              </Text>
+            </Pressable>
+          </VStack>
+        </Box>
+      </Center>
+    </SafeAreaView>
+  );
 };
 
 export default Login;

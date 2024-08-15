@@ -20,7 +20,7 @@ const Header = ({ route, title, withBack = false, }) => {
                         {!withBack ? (
                             <>
                                 <Image
-                                    source={require("../assets/logo.png")}
+                                    source={require("../assets/inventory.jpg")}
                                     w="12"
                                     h="12"
                                     alt="PLN LOGO"
@@ -33,7 +33,7 @@ const Header = ({ route, title, withBack = false, }) => {
                                 onPress={() => navigation.goBack()}
                             >
                                 <Box mr={"3"}>
-                                    <Ionicons name="arrow-back-outline" size={32} color="red" />
+                                    <Ionicons name="arrow-back-outline" size={32} color="black" />
                                 </Box>
                             </TouchableOpacity>
                         )}

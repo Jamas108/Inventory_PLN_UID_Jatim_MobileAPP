@@ -1,114 +1,93 @@
 import React, { useState, useEffect } from "react";
-import { Box, ScrollView, Image, Text, Heading, VStack, Input, Button, Center, Icon } from "native-base";
-import { FontAwesome } from "@expo/vector-icons";
-import Header from "../components/header";
+import { StatusBar, Image, Box, Heading, Text, ScrollView, VStack, Button, Icon } from "native-base";
+import { MaterialIcons } from "@expo/vector-icons";
+import Header from '../components/header';
+import { clearStorage, getData } from '../utils/localStorage';
+import FIREBASE from '../actions/config/FIREBASE';
 
 const Profile = ({ navigation }) => {
-    const [nama, setNama] = useState("");
-    const [jenisKelamin, setJenisKelamin] = useState("");
-    const [noTelepon, setNoTelepon] = useState("");
-    const [email, setEmail] = useState("");
+    const [Profile, setProfile] = useState(null);
 
-    const fetchUserProfile = async () => {
+    const getUserData = async () => {
         try {
-            const response = await fetch('http://10.0.2.2:3000/users'); // Ensure you have the correct endpoint
-            if (!response.ok) { 
-                throw new Error('Failed to fetch user profile');
+            const userData = await getData("user");
+
+            if (userData) {
+                const userRef = FIREBASE.database().ref(`users/${userData.uid}`);
+                const snapshot = await userRef.once("value");
+                const updatedUserData = snapshot.val();
+
+                if (updatedUserData) {
+                    setProfile(updatedUserData);
+                } else {
+                    console.log("User data not found");
+                }
             }
-            const user = await response.json();
-            setNama(user.Nama || ""); // Ensure fallback values
-            setJenisKelamin(user.Jenis_Kelamin || "");
-            setNoTelepon(user.No_Telepon || "");
-            setEmail(user.email || "");
         } catch (error) {
-            console.error('Failed to fetch user profile', error);
+            console.error("Error fetching user data:", error);
+        }
+    };
+
+    const onSubmit = () => {
+        if (Profile) {
+            FIREBASE.auth()
+                .signOut()
+                .then(() => {
+                    clearStorage();
+                    navigation.replace("Login");
+                })
+                .catch((error) => {
+                    alert(error);
+                });
+        } else {
+            navigation.replace("Login");
         }
     };
 
     useEffect(() => {
-        fetchUserProfile();
-    }, []);
-
-    const handleLogout = () => {
-        // Contoh logika untuk logout, seperti menghapus token dari AsyncStorage (jika ada)
-        // AsyncStorage.removeItem('userToken');
-        console.log("User logged out");
-
-        // Arahkan ke halaman login setelah logout
-        navigation.replace('Login'); // Menggunakan 'replace' agar user tidak dapat kembali ke halaman profile setelah logout
-    };
+        const unsubscribe = navigation.addListener("focus", getUserData);
+        return () => unsubscribe();
+    }, [navigation]);
 
     return (
-        <>
-            <Header title={"Profile"} />
-            <ScrollView>
-                <Center mt={5}>
-                    <Image
-                        source={require("../assets/profile.jpg")}
-                        alt="Profile Picture"
-                        size="xl"
-                        borderRadius={100}
-                    />
-                    <Heading mt={5} fontSize="xl">
-                        {nama}
+        <ScrollView bg="#f5f5f5">
+            <Header title="Profile" />
+            <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+            <Box flex={1} justifyContent="space-between" alignItems="center" p={4}>
+                <Box alignSelf="center" width="90%" bg="white" mt={12} shadow={4} borderRadius={10} p={4}>
+                    <Box alignItems="center" mt={-12}>
+                        <Image
+                            source={require("../assets/logo.png")}
+                            borderRadius={10}
+                            h={150}
+                            w={150}
+                            alt="Profile Logo"
+                        />
+                    </Box>
+                    <Heading alignSelf="center" fontSize={22} fontWeight="bold" mt={2}>
+                        {Profile?.name}
                     </Heading>
-                </Center>
-                <VStack space={4} mt={4} px={5}>
-                    <Box>
-                        <Text fontSize="md" color="gray.500">
-                            Nama
-                        </Text>
-                        <Input
-                            value={nama}
-                            onChangeText={setNama}
-                            mt={2}
-                            isReadOnly
-                        />
-                    </Box>
-                    <Box>
-                        <Text fontSize="md" color="gray.500">
-                            Jenis Kelamin
-                        </Text>
-                        <Input
-                            value={jenisKelamin}
-                            onChangeText={setJenisKelamin}
-                            mt={2}
-                            isReadOnly
-                        />
-                    </Box>
-                    {/* <Box>
-                        <Text fontSize="md" color="gray.500">
-                            No Telepon
-                        </Text>
-                        <Input
-                            value={noTelepon}
-                            onChangeText={setNoTelepon}
-                            mt={2}
-                            isReadOnly
-                        />
-                    </Box> */}
-                    <Box>
-                        <Text fontSize="md" color="gray.500">
-                            Email
-                        </Text>
-                        <Input
-                            value={email}
-                            onChangeText={setEmail}
-                            mt={2}
-                            isReadOnly
-                        />
-                    </Box>
+                    <Text alignSelf="center" color="gray.500" fontSize={16} mt={1}>
+                        {Profile?.email}
+                    </Text>
+                    <Text alignSelf="center" color="gray.500" fontSize={16} mt={1}>
+                        {Profile?.nomorhp}
+                    </Text>
+                </Box>
+
+                <Box width="100%" px={5} pb={5} mt={6}>
                     <Button
-                        mt={5}
+                        mt={4}
+                        size="lg"
                         colorScheme="red"
-                        onPress={handleLogout}
-                        leftIcon={<Icon as={FontAwesome} name="sign-out" size="sm" />}
+                        leftIcon={<Icon as={MaterialIcons} name="logout" size="sm" />}
+                        onPress={onSubmit}
                     >
-                        Logout
+                        Log Out
                     </Button>
-                </VStack>
-            </ScrollView>
-        </>
+                </Box>
+            </Box>
+        </ScrollView>
     );
 };
 
