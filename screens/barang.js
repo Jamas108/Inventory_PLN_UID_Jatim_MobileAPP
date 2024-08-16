@@ -189,7 +189,7 @@ const Barang = ({ navigation }) => {
                         <Box key={index} borderBottomWidth={1} borderBottomColor="coolGray.200" pb={2} mb={2}>
                           <Text>Kode Barang: {barang.kode_barang}</Text>
                           <Text>Nama Barang: {barang.nama_barang}</Text>
-                          <Text>Kuantitas: {barang.jumlah_barang}</Text>
+                          <Text>Jumlah Barang: {barang.jumlah_barang}</Text>
                           <Text>Kategori Barang: {barang.kategori_barang}</Text>
                           <Button
                             mt={2}
@@ -202,6 +202,7 @@ const Barang = ({ navigation }) => {
                               nama_barang: barang.nama_barang,
                               garansi_barang_awal: barang.garansi_barang_awal,
                               garansi_barang_akhir: barang.garansi_barang_akhir,
+                              jumlah_barang: barang.jumlah_barang,
                             })}
                             leftIcon={<Icon as={FontAwesome5} name="undo" size="sm" color="white" />}
                           >

@@ -198,8 +198,8 @@ const CreateBarang = ({ navigation }) => {
             jenis_barang: item.jenisBarang || null,
             kategori_barang: item.kategoriBarang || null,
             jumlah_barang: item.jumlahBarang || null,
-            garansi_barang_awal: selectedBarang ? selectedBarang.Garansi_Barang_Awal : null,
-            garansi_barang_akhir: selectedBarang ? selectedBarang.Garansi_Barang_Akhir : null,
+            garansi_barang_awal: selectedBarang ? selectedBarang.garansi_barang_awal || null : null, // Menangani undefined
+            garansi_barang_akhir: selectedBarang ? selectedBarang.garansi_barang_akhir || null : null, // Menangani undefined
           };
         }),
       };
@@ -220,25 +220,24 @@ const CreateBarang = ({ navigation }) => {
       console.error('Error saving data:', error);
       showModal('Error', 'Terjadi kesalahan saat menyimpan data.');
     }
-  };
+};
 
   const handleAddItem = () => {
     setItems([...items, { id: items.length + 1, namaBarang: '', kodeBarang: '', jenisBarang: '', jumlahBarang: '' }]);
   };
-
   const handleInputChange = (index, name, value) => {
     const newItems = [...items];
-  
+
     if (index >= 0 && index < newItems.length) {
       if (name === 'namaBarang') {
-        const selectedBarang = barangOptions.find(item => item.kode_barang === value);
+        const selectedBarang = barangOptions.find(option => option.kode_barang === value); // Gunakan kode_barang untuk menemukan barang yang dipilih
         if (selectedBarang) {
           newItems[index].namaBarang = selectedBarang.nama_barang;
           newItems[index].kodeBarang = selectedBarang.kode_barang;
           newItems[index].jenisBarang = selectedBarang.jenis_barang;
           newItems[index].kategoriBarang = selectedBarang.kategori_barang;
-          newItems[index].jumlahBarang = '';
-          newItems[index].maxJumlahBarang = selectedBarang.Jumlah_Barang;
+          newItems[index].jumlahBarang = ''; // Reset jumlah barang
+          newItems[index].maxJumlahBarang = selectedBarang.jumlah_barang; // Set max jumlah barang
         }
       } else if (name === 'jumlahBarang') {
         const maxJumlahBarang = newItems[index].maxJumlahBarang;
@@ -251,12 +250,15 @@ const CreateBarang = ({ navigation }) => {
       } else {
         newItems[index][name] = value;
       }
-  
+
       setItems(newItems);
     } else {
       console.error(`Item dengan indeks ${index} tidak ditemukan di array items.`);
     }
   };
+
+
+
 
 
   const showModal = (title, message) => {
@@ -323,7 +325,7 @@ const CreateBarang = ({ navigation }) => {
               items.map((item, index) => (
                 <Box key={index} bg="gray.50" p={4} borderRadius="lg" shadow={1} mb={4}>
                   <Text fontSize="md" mb={2} fontWeight="bold">Barang {index + 1}</Text>
-            
+
                   <FormControl mb={3}>
                     <FormControl.Label>Nama Barang</FormControl.Label>
                     <Select
@@ -334,14 +336,16 @@ const CreateBarang = ({ navigation }) => {
                     >
                       {barangOptions.map(option => (
                         <Select.Item
-                          key={`${option.source}-${option.Kode_Barang}`}
-                          label={`${option.nama_barang} - ${option.Kategori_Barang} - ${option.Jumlah_Barang} unit ${option.Kategori_Retur ? `(Retur - ${option.Kategori_Retur})` : `(Baru)`}`}
-                          value={option.Kode_Barang}
+                          key={`${option.source}-${option.kode_barang}`} // Pastikan key unik
+                          label={`${option.nama_barang} -${option.kategori_barang} - ${option.jumlah_barang} unit ${option.Kategori_Retur ? `(${option.Kategori_Retur})` : `(Baru)`}`}
+                          value={option.kode_barang} // Gunakan kode_barang sebagai value
                         />
                       ))}
                     </Select>
+
                   </FormControl>
-            
+
+
                   <HStack space={3} mt={3}>
                     <FormControl flex={1}>
                       <FormControl.Label>Kode Barang</FormControl.Label>
@@ -360,7 +364,7 @@ const CreateBarang = ({ navigation }) => {
                       />
                     </FormControl>
                   </HStack>
-            
+
                   <FormControl mt={3}>
                     <FormControl.Label>Kategori Barang</FormControl.Label>
                     <Input
@@ -369,7 +373,7 @@ const CreateBarang = ({ navigation }) => {
                       bg="gray.100"
                     />
                   </FormControl>
-            
+
                   <FormControl mt={3}>
                     <FormControl.Label>Jumlah Barang</FormControl.Label>
                     <Input
@@ -386,13 +390,12 @@ const CreateBarang = ({ navigation }) => {
               <Text color="red.500" textAlign="center" mt={5}>Tidak ada barang</Text>
             )}
 
-
-            <HStack space={3} justifyContent="space-between" mt={4}>
+            <HStack space={3} justifyContent="space-between" mt={1}>
               <Button onPress={handleAddItem} flex={1} colorScheme="blue">Tambah Barang</Button>
               <Button onPress={addBarang_Keluar} flex={1} colorScheme="green">Simpan</Button>
             </HStack>
 
-            <Text alignSelf="center" fontSize="sm" mt={4} color="gray.600">
+            <Text alignSelf="center" fontSize="sm" mt={2} mb={2} bold color="gray.600">
               Harap mengisikan data diri dengan baik dan benar!
             </Text>
           </VStack>

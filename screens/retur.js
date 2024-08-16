@@ -130,17 +130,23 @@ const Retur = ({ navigation }) => {
                     />
                   </HStack>
 
+                  {item.status === 'Accepted' && (
+                    <>
+                      <Text mt={2}>Jumlah Yang Disetujui: {item.jumlah_barang_diretur|| "Tidak ada catatan"}</Text>
+                    </>
+                  )}
+
                   <Text>Pihak Pemohon: {item.Pihak_Pemohon}</Text>
                   <Text>Tanggal Retur: {item.Tanggal_Retur}</Text>
-                  <Text>Jumlah Barang: {item.Jumlah_Barang}</Text>
+                  <Text>Jumlah Barang: {item.jumlah_barang}</Text>
                   <Text>Catatan: {item.Deskripsi || "Tidak ada catatan"}</Text>
 
                   {expanded[item.id] && (
                     <VStack space={2} mt={2} pl={4} borderLeftWidth={2} borderLeftColor="#004aad">
                       <Text fontWeight="bold">Detail Barang:</Text>
-                      <Text>Nama Barang: {item.Nama_Barang}</Text>
-                      <Text>Kode Barang: {item.Kode_Barang}</Text>
-                      <Text>Kategori Barang: {item.Kategori_Barang}</Text>
+                      <Text>Nama Barang: {item.nama_barang}</Text>
+                      <Text>Kode Barang: {item.kode_barang}</Text>
+                      <Text>Kategori Barang: {item.kategori_barang}</Text>
                     </VStack>
                   )}
                 </VStack>
