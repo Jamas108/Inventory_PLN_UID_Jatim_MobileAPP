@@ -9,7 +9,7 @@ import Header from '../components/header';
 import { getData } from '../utils';
 
 const CreateRetur = ({ route, navigation }) => {
-  const { Pihak_Pemohon, Kode_Barang, Kategori_Barang, Nama_Barang, Garansi_Barang_Awal, Garansi_Barang_Akhir } = route.params;
+  const { Pihak_Pemohon, kode_barang, kategori_barang, nama_barang, garansi_barang_awal, garansi_barang_akhir, jumlah_barang } = route.params;
 
   const [jumlahBarang, setJumlahBarang] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
@@ -131,12 +131,12 @@ const CreateRetur = ({ route, navigation }) => {
         id: retur_id,
         userId: user.uid,
         Pihak_Pemohon: Pihak_Pemohon,
-        kode_Barang: Kode_Barang,
-        kategori_barang: Kategori_Barang,
-        garansi_barang_awal: Garansi_Barang_Awal,
-        garansi_barang_akhir: Garansi_Barang_Akhir,
+        kode_barang: kode_barang,
+        kategori_barang: kategori_barang,
+        garansi_barang_awal: garansi_barang_awal,
+        garansi_barang_akhir: garansi_barang_akhir,
         Kategori_Retur: '',
-        nama_Barang: Nama_Barang,
+        nama_barang: nama_barang,
         Tanggal_Retur: tanggalRetur,
         jumlah_barang: jumlahBarang,
         Deskripsi: deskripsi,
@@ -173,13 +173,13 @@ const CreateRetur = ({ route, navigation }) => {
         <VStack space={5} width="100%">
           <Card borderRadius="lg" shadow={2}>
             <Box p={4}>
-              <Text fontSize="lg" fontWeight="bold" mb={4}>Silahkan Input Data Barangnya :</Text>
+              <Text fontSize="lg" fontWeight="bold" mb={4}>Detail Barang</Text>
               <Divider my={2} />
               <VStack space={4}>
                 <FormControl>
                   <FormControl.Label>Nama Barang</FormControl.Label>
                   <Input
-                    value={Nama_Barang}
+                    value={nama_barang}
                     isDisabled
                     bg="gray.100"
                     borderRadius="md"
@@ -189,7 +189,7 @@ const CreateRetur = ({ route, navigation }) => {
                 <FormControl>
                   <FormControl.Label>Kode Barang</FormControl.Label>
                   <Input
-                    value={Kode_Barang}
+                    value={kode_barang}
                     isDisabled
                     bg="gray.100"
                     borderRadius="md"
@@ -199,7 +199,7 @@ const CreateRetur = ({ route, navigation }) => {
                 <FormControl>
                   <FormControl.Label>Kategori Barang</FormControl.Label>
                   <Input
-                    value={Kategori_Barang}
+                    value={kategori_barang}
                     isDisabled
                     bg="gray.100"
                     borderRadius="md"
@@ -274,7 +274,7 @@ const CreateRetur = ({ route, navigation }) => {
             </Box>
           </Card>
 
-          <Center mt={3}>
+          <Center mt={6}>
             <Button 
               onPress={addRetur_Barang} 
               colorScheme="success" 
@@ -284,7 +284,7 @@ const CreateRetur = ({ route, navigation }) => {
             </Button>
           </Center>
 
-          <Text alignSelf="center" fontSize="sm" mt={2} mb={4} color="gray.600">
+          <Text alignSelf="center" fontSize="sm" mt={4} color="gray.600">
             Harap mengisikan Data dengan baik dan benar!
           </Text>
         </VStack>
