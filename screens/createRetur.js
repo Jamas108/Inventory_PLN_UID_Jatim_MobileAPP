@@ -119,14 +119,14 @@ const CreateRetur = ({ route, navigation }) => {
       setModalVisible(true);
       return;
     }
-
+  
     try {
       const returRef = FIREBASE.database().ref('Retur_Barang').push();
       const retur_id = returRef.key;
-
+  
       const fileSuratUrl = await uploadFile(fileSurat.uri, `Retur_Barang/${retur_id}/SuratJalan.pdf`);
       const imageUrl = await uploadFile(image, `Retur_Barang/${retur_id}/Image.jpg`);
-
+  
       const data = {
         id: retur_id,
         userId: user.uid,
@@ -144,22 +144,65 @@ const CreateRetur = ({ route, navigation }) => {
         Gambar_Retur: imageUrl,
         status: 'Pending',
       };
-
+  
+      // Save the Retur_Barang entry to the database
       await returRef.set(data);
+  
+      // Now reduce the jumlah_barang in the corresponding Barang_Keluar entry
+      const barangKeluarRef = FIREBASE.database().ref('Barang_Keluar');
+      const snapshot = await barangKeluarRef.once('value');
+      const barangKeluarData = snapshot.val();
+  
+      // Find the Barang_Keluar entry with the matching kode_barang
+      Object.entries(barangKeluarData).forEach(async ([key, value]) => {
+        const barangInKeluar = value.barang.find(b => b.kode_barang === kode_barang);
+        if (barangInKeluar) {
+          // Decrease jumlah_barang by the returned amount
+          const newJumlahBarang = Number(barangInKeluar.jumlah_barang) - Number(jumlahBarang);
+          if (newJumlahBarang < 0) {
+            setFormError('Jumlah retur melebihi jumlah barang keluar.');
+            setModalVisible(true);
+            return;
+          }
+  
+          // Update the barang in Barang_Keluar
+          const updatedBarang = value.barang.map(b =>
+            b.kode_barang === kode_barang ? { ...b, jumlah_barang: newJumlahBarang.toString() } : b
+          );
+  
+          await FIREBASE.database().ref(`Barang_Keluar/${key}`).update({
+            barang: updatedBarang,
+          });
+        }
+      });
+  
+       // Fungsi untuk mengirim notifikasi setelah pengajuan barang keluar berhasil
+       const sendBarangReturNotification = async (user) => {
+        // Data notifikasi
+        const notificationData = {
+          title: 'Pending Pengajuan Retur barang ',
+          message: `Pengajuan Retur Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
+          created_at: new Date().toISOString(),
+          user_status: {
+            [`user_2`]: { status: 'unread' },   // Status untuk user yang mengajukan
+            [`admin_1`]: { status: 'unread' }            // Status untuk admin (disesuaikan dengan ID admin)
+          }
+        };
 
-      const notificationData = {
-        title: 'Pending Pengajuan Retur Barang',
-        message: `Pengajuan Retur dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
-        status: 'unread',
-    };
-    await FIREBASE.database().ref('notifications').push(notificationData);
+        // Push notifikasi ke database Firebase
+        await FIREBASE.database().ref('notifications').push(notificationData);
+      };
 
+      // Panggil fungsi setelah pengajuan barang keluar berhasil
+      sendBarangReturNotification(user);
+  
       setSuccessModalVisible(true);
     } catch (error) {
       setFormError('Terjadi kesalahan saat menyimpan data.');
       setModalVisible(true);
     }
   };
+  
 
   const handleSuccessClose = () => {
     setSuccessModalVisible(false);
@@ -209,7 +252,7 @@ const CreateRetur = ({ route, navigation }) => {
                 <FormControl>
                   <FormControl.Label>Tanggal Retur</FormControl.Label>
                   <Input
-                    placeholder="Masukkan Tanggal Retur"
+                    placeholder="Format DD-MM-YYYY"
                     value={tanggalRetur}
                     onChangeText={(value) => setTanggalRetur(value)}
                     borderRadius="md"
@@ -223,6 +266,7 @@ const CreateRetur = ({ route, navigation }) => {
                     value={jumlahBarang}
                     onChangeText={(value) => setJumlahBarang(value)}
                     borderRadius="md"
+                    keyboardType='numeric'
                   />
                 </FormControl>
 

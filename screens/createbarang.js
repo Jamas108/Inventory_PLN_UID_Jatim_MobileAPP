@@ -206,13 +206,25 @@ const CreateBarang = ({ navigation }) => {
 
       await newRef.set(data);
 
-      // Menambahkan notifikasi ke database `notifications`
-      const notificationData = {
-        title: 'Pending Pengajuan Barang Keluar',
-        message: `Pengajuan Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
-        status: 'unread',
+      // Fungsi untuk mengirim notifikasi setelah pengajuan barang keluar berhasil
+      const sendBarangKeluarNotification = async (user) => {
+        // Data notifikasi
+        const notificationData = {
+          title: 'Pending Pengajuan Barang Keluar',
+          message: `Pengajuan Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
+          created_at: new Date().toISOString(),
+          user_status: {
+            [`user_2`]: { status: 'unread' },   // Status untuk user yang mengajukan
+            [`admin_1`]: { status: 'unread' }            // Status untuk admin (disesuaikan dengan ID admin)
+          }
+        };
+
+        // Push notifikasi ke database Firebase
+        await FIREBASE.database().ref('notifications').push(notificationData);
       };
-      await FIREBASE.database().ref('notifications').push(notificationData);
+
+      // Panggil fungsi setelah pengajuan barang keluar berhasil
+      sendBarangKeluarNotification(user);
 
       showModal('Berhasil', 'Barang berhasil diajukan.');
       navigation.goBack();
@@ -220,7 +232,7 @@ const CreateBarang = ({ navigation }) => {
       console.error('Error saving data:', error);
       showModal('Error', 'Terjadi kesalahan saat menyimpan data.');
     }
-};
+  };
 
   const handleAddItem = () => {
     setItems([...items, { id: items.length + 1, namaBarang: '', kodeBarang: '', jenisBarang: '', jumlahBarang: '' }]);
@@ -257,10 +269,6 @@ const CreateBarang = ({ navigation }) => {
     }
   };
 
-
-
-
-
   const showModal = (title, message) => {
     setModalMessage(message);
     setModalVisible(true);
@@ -293,9 +301,10 @@ const CreateBarang = ({ navigation }) => {
             <FormControl>
               <FormControl.Label>Tanggal Pengajuan</FormControl.Label>
               <Input
-                placeholder="Masukan Rencana Tanggal Pengajuan Barang"
+                placeholder="Format DD-MM-YYY"
                 value={formData.tanggalPeminjaman}
                 onChangeText={(value) => setFormData({ ...formData, tanggalPeminjaman: value })}
+
               />
             </FormControl>
 
@@ -303,9 +312,10 @@ const CreateBarang = ({ navigation }) => {
               <FormControl>
                 <FormControl.Label>Tanggal Kembali</FormControl.Label>
                 <Input
-                  placeholder="Masukan Tanggal Kembali Barang"
+                  placeholder="Format DD-MM-YYY"
                   value={formData.tanggalKembali}
                   onChangeText={(value) => setFormData({ ...formData, tanggalKembali: value })}
+
                 />
               </FormControl>
             )}
@@ -382,6 +392,7 @@ const CreateBarang = ({ navigation }) => {
                       onChangeText={(value) => handleInputChange(index, 'jumlahBarang', value)}
                       placeholder="Masukkan Jumlah Barang"
                       bg="white"
+                      keyboardType='numeric'
                     />
                   </FormControl>
                 </Box>
