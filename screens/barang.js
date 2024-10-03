@@ -87,7 +87,9 @@ const Barang = ({ navigation }) => {
   return (
     <>
       <Header title={"Inventory UID JATIM"} />
-      <ScrollView contentContainerStyle={{ padding: 15, backgroundColor: "#E5E5E5" }}>
+      <ScrollView>
+      <Box padding={15} 
+      backgroundColor={"gray.100"}>
         <Box
           flexDirection="row"
           justifyContent="space-between"
@@ -109,14 +111,14 @@ const Barang = ({ navigation }) => {
           </Button>
         </Box>
         <Divider mt={-3} mb={5} backgroundColor="#004aad" />
-        <VStack space={4} width="100%">
+        <VStack space={4} width="100%" >
           {loading ? (
             <Center>
               <Text>Loading...</Text>
             </Center>
           ) : barangData.length > 0 ? (
             barangData.map(item => (
-              <Box key={item.id} padding={4} borderRadius="lg" backgroundColor="white" shadow={3} mb={4}>
+              <Box key={item.id} padding={4} borderRadius="lg" backgroundColor="white" shadow={2} mb={4}>
                 <VStack space={2}>
                   <HStack
                     justifyContent="space-between"
@@ -191,23 +193,26 @@ const Barang = ({ navigation }) => {
                           <Text>Nama Barang: {barang.nama_barang}</Text>
                           <Text>Jumlah Barang: {barang.jumlah_barang}</Text>
                           <Text>Kategori Barang: {barang.kategori_barang}</Text>
-                          <Button
-                            mt={2}
-                            backgroundColor="orange.400"
-                            _text={{ color: "white" }}
-                            onPress={() => navigation.navigate('CreateRetur', {
-                              Pihak_Pemohon: item.Nama_PihakPeminjam,
-                              kode_barang: barang.kode_barang,
-                              kategori_barang: barang.kategori_barang,
-                              nama_barang: barang.nama_barang,
-                              garansi_barang_awal: barang.garansi_barang_awal,
-                              garansi_barang_akhir: barang.garansi_barang_akhir,
-                              jumlah_barang: barang.jumlah_barang,
-                            })}
-                            leftIcon={<Icon as={FontAwesome5} name="undo" size="sm" color="white" />}
-                          >
-                            Retur Barang
-                          </Button>
+                          {item.status === 'Accepted' && (
+                            <Button
+                              mt={2}
+                              backgroundColor="orange.400"
+                              _text={{ color: "white" }}
+                              onPress={() => navigation.navigate('CreateRetur', {
+                                Pihak_Pemohon: item.Nama_PihakPeminjam,
+                                kode_barang: barang.kode_barang,
+                                kategori_barang: barang.kategori_barang,
+                                nama_barang: barang.nama_barang,
+                                garansi_barang_awal: barang.garansi_barang_awal,
+                                garansi_barang_akhir: barang.garansi_barang_akhir,
+                                jumlah_barang: barang.jumlah_barang,
+                              })}
+                              leftIcon={<Icon as={FontAwesome5} name="undo" size="sm" color="white" />}
+                            >
+                              Retur Barang
+                            </Button>
+                          )}
+
                         </Box>
                       )) : <Text>No items found</Text>}
                     </VStack>
@@ -221,6 +226,7 @@ const Barang = ({ navigation }) => {
             </Center>
           )}
         </VStack>
+      </Box>
       </ScrollView>
     </>
   );
