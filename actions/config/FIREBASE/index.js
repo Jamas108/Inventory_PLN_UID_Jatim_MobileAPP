@@ -5,14 +5,14 @@ import "firebase/compat/storage";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAac5nZotkL4gC9PXiLNpMKdtocFa2fCpw",
-  authDomain: "inventorypln-7c80e.firebaseapp.com",
-  databaseURL: "https://inventorypln-7c80e-default-rtdb.firebaseio.com",
-  projectId: "inventorypln-7c80e",
-  storageBucket: "inventorypln-7c80e.appspot.com",
-  messagingSenderId: "800805229429",
-  appId: "1:800805229429:web:1e0dc6519c8bf8d214b93c",
-  measurementId: "G-PSQJBR8J2M"
+  apiKey: "AIzaSyB4LxsgygjvjvkT8bii0p1PfeL1gJ7ynwQ",
+  authDomain: "inventorypln-d9741.firebaseapp.com",
+  databaseURL: "https://inventorypln-d9741-default-rtdb.firebaseio.com",
+  projectId: "inventorypln-d9741",
+  storageBucket: "inventorypln-d9741.appspot.com",
+  messagingSenderId: "893753793679",
+  appId: "1:893753793679:web:81521f7f577f835e5924fa",
+  measurementId: "G-K6470E0MMF"
 };
 
 // Initialize Firebase

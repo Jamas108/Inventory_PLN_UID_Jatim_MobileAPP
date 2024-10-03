@@ -74,20 +74,24 @@ const Tabs = () => {
             />
           );
         },
-        tabBarIconStyle: { marginTop: 5 },
+        tabBarIconStyle: { marginTop: 0 }, // Kurangi margin agar teks lebih dekat ke ikon
         tabBarStyle: {
           alignSelf: "center",
-          height: 70,
+          height: 90,
           width: "100%",
           borderRadius: 10,
-          marginBottom: 10,
+          marginBottom: -5,
           borderTopWidth: 0,
           backgroundColor: '#fff',
         },
-        tabBarLabel: ({ children, color, focused }) => {
+        tabBarLabel: ({ focused, color }) => {
           return (
-            <Text color={focused ? "black" : color} mb={2}>
-              {children}
+            <Text
+              color={focused ? "black" : color}
+              alignSelf="center"
+              mb={5}
+            >
+              {route.name}
             </Text>
           );
         },
@@ -107,12 +111,11 @@ const Tabs = () => {
           )
         }}
       />
-      <Tab.Screen
-        name="Profile"
-        component={Profile} options={noHead} />
+      <Tab.Screen name="Profile" component={Profile} options={noHead} />
     </Tab.Navigator>
   );
 };
+
 
 // Main App component with Stack Navigator
 const App = () => {

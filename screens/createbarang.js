@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, ActivityIndicator } from 'react-native';
 import { Box, Button, Text, VStack, Input, Select, FormControl, HStack, Modal } from 'native-base';
 import FIREBASE from '../actions/config/FIREBASE';
 import Header from '../components/header';
@@ -20,6 +20,7 @@ const CreateBarang = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false); // Loading state for saving
 
   const Id_Kategori_PeminjamanOptions = [
     { id: 'Insidentil', name: 'Insidentil' },
@@ -32,7 +33,6 @@ const CreateBarang = ({ navigation }) => {
       const barangMasukData = await getBarangMasuk();
       const returBarangData = await getReturBarang();
 
-      // Tambahkan awalan yang mengidentifikasi sumber data
       const combinedData = [
         ...barangMasukData.map(item => ({ ...item, source: 'masuk' })),
         ...returBarangData.map(item => ({ ...item, source: 'retur' }))
@@ -45,7 +45,6 @@ const CreateBarang = ({ navigation }) => {
     fetchData();
     getUserData();
   }, []);
-
 
   const getBarangMasuk = async () => {
     try {
@@ -85,7 +84,6 @@ const CreateBarang = ({ navigation }) => {
         const returBarang = [];
 
         Object.values(returBarangData).forEach(item => {
-          // Filter barang dengan kategori_retur "Bekas Handal"
           if (item.Kategori_Retur === "Bekas Handal") {
             returBarang.push(item);
           }
@@ -170,6 +168,8 @@ const CreateBarang = ({ navigation }) => {
       return;
     }
 
+    setIsSaving(true); // Show loading spinner and disable button
+
     try {
       const newRef = FIREBASE.database().ref('Barang_Keluar').push();
       const barang_keluar_id = newRef.key;
@@ -198,32 +198,28 @@ const CreateBarang = ({ navigation }) => {
             jenis_barang: item.jenisBarang || null,
             kategori_barang: item.kategoriBarang || null,
             jumlah_barang: item.jumlahBarang || null,
-            garansi_barang_awal: selectedBarang ? selectedBarang.garansi_barang_awal || null : null, // Menangani undefined
-            garansi_barang_akhir: selectedBarang ? selectedBarang.garansi_barang_akhir || null : null, // Menangani undefined
+            garansi_barang_awal: selectedBarang ? selectedBarang.garansi_barang_awal || null : null,
+            garansi_barang_akhir: selectedBarang ? selectedBarang.garansi_barang_akhir || null : null,
           };
         }),
       };
 
       await newRef.set(data);
 
-      // Fungsi untuk mengirim notifikasi setelah pengajuan barang keluar berhasil
       const sendBarangKeluarNotification = async (user) => {
-        // Data notifikasi
         const notificationData = {
           title: 'Pending Pengajuan Barang Keluar',
           message: `Pengajuan Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
           created_at: new Date().toISOString(),
           user_status: {
-            [`user_2`]: { status: 'unread' },   // Status untuk user yang mengajukan
-            [`admin_1`]: { status: 'unread' }            // Status untuk admin (disesuaikan dengan ID admin)
+            [`user_2`]: { status: 'unread' },   
+            [`admin_1`]: { status: 'unread' }
           }
         };
 
-        // Push notifikasi ke database Firebase
         await FIREBASE.database().ref('notifications').push(notificationData);
       };
 
-      // Panggil fungsi setelah pengajuan barang keluar berhasil
       sendBarangKeluarNotification(user);
 
       showModal('Berhasil', 'Barang berhasil diajukan.');
@@ -231,43 +227,47 @@ const CreateBarang = ({ navigation }) => {
     } catch (error) {
       console.error('Error saving data:', error);
       showModal('Error', 'Terjadi kesalahan saat menyimpan data.');
+    } finally {
+      setIsSaving(false); // Hide loading spinner and enable button again
     }
   };
 
   const handleAddItem = () => {
     setItems([...items, { id: items.length + 1, namaBarang: '', kodeBarang: '', jenisBarang: '', jumlahBarang: '' }]);
   };
+
   const handleInputChange = (index, name, value) => {
     const newItems = [...items];
-
+  
     if (index >= 0 && index < newItems.length) {
       if (name === 'namaBarang') {
-        const selectedBarang = barangOptions.find(option => option.kode_barang === value); // Gunakan kode_barang untuk menemukan barang yang dipilih
+        const selectedBarang = barangOptions.find(option => option.kode_barang === value);
         if (selectedBarang) {
           newItems[index].namaBarang = selectedBarang.nama_barang;
           newItems[index].kodeBarang = selectedBarang.kode_barang;
           newItems[index].jenisBarang = selectedBarang.jenis_barang;
           newItems[index].kategoriBarang = selectedBarang.kategori_barang;
-          newItems[index].jumlahBarang = ''; // Reset jumlah barang
-          newItems[index].maxJumlahBarang = selectedBarang.jumlah_barang; // Set max jumlah barang
+          newItems[index].jumlahBarang = '';
+          newItems[index].maxJumlahBarang = selectedBarang.jumlah_barang; // Store max stock
         }
       } else if (name === 'jumlahBarang') {
         const maxJumlahBarang = newItems[index].maxJumlahBarang;
         if (Number(value) > maxJumlahBarang) {
-          showModal('Error', `Jumlah barang yang diinput melebihi stok yang tersedia (${maxJumlahBarang} unit).`);
-          newItems[index].jumlahBarang = maxJumlahBarang.toString();
+          showModal('Error', `Jumlah barang yang diinput melebihi stok yang tersedia. Jumlah maksimal yang dapat diretur adalah ${maxJumlahBarang} unit.`);
+          newItems[index].jumlahBarang = maxJumlahBarang.toString(); // Set to max quantity available
         } else {
-          newItems[index].jumlahBarang = value;
+          newItems[index].jumlahBarang = value; // Valid input
         }
       } else {
         newItems[index][name] = value;
       }
-
+  
       setItems(newItems);
     } else {
       console.error(`Item dengan indeks ${index} tidak ditemukan di array items.`);
     }
   };
+  
 
   const showModal = (title, message) => {
     setModalMessage(message);
@@ -304,7 +304,6 @@ const CreateBarang = ({ navigation }) => {
                 placeholder="Format YYYY-MM-DD"
                 value={formData.tanggalPeminjaman}
                 onChangeText={(value) => setFormData({ ...formData, tanggalPeminjaman: value })}
-
               />
             </FormControl>
 
@@ -315,7 +314,6 @@ const CreateBarang = ({ navigation }) => {
                   placeholder= "Format YYYY-MM-DD"
                   value={formData.tanggalKembali}
                   onChangeText={(value) => setFormData({ ...formData, tanggalKembali: value })}
-
                 />
               </FormControl>
             )}
@@ -346,9 +344,9 @@ const CreateBarang = ({ navigation }) => {
                     >
                       {barangOptions.map(option => (
                         <Select.Item
-                          key={`${option.source}-${option.kode_barang}`} // Pastikan key unik
+                          key={`${option.source}-${option.kode_barang}`} // Ensure unique key
                           label={`${option.nama_barang} -${option.kategori_barang} - ${option.jumlah_barang} unit ${option.Kategori_Retur ? `(${option.Kategori_Retur})` : `(Baru)`}`}
-                          value={option.kode_barang} // Gunakan kode_barang sebagai value
+                          value={option.kode_barang} // Use kode_barang as value
                         />
                       ))}
                     </Select>
@@ -403,7 +401,15 @@ const CreateBarang = ({ navigation }) => {
 
             <HStack space={3} justifyContent="space-between" mt={1}>
               <Button onPress={handleAddItem} flex={1} colorScheme="blue">Tambah Barang</Button>
-              <Button onPress={addBarang_Keluar} flex={1} colorScheme="green">Simpan</Button>
+              <Button
+                onPress={addBarang_Keluar}
+                flex={1}
+                colorScheme="green"
+                isDisabled={isSaving} // Disable button if saving
+                leftIcon={isSaving ? <ActivityIndicator size="small" color="white" /> : null} // Show loading spinner
+              >
+                {isSaving ? 'Menyimpan...' : 'Simpan'}
+              </Button>
             </HStack>
 
             <Text alignSelf="center" fontSize="sm" mt={2} mb={2} bold color="gray.600">

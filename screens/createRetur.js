@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, ActivityIndicator} from 'react-native';
 import { Box, Button, Text, VStack, Input, FormControl, HStack, Modal, Icon, Card, Divider, Center, useToast, } from 'native-base';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,6 +20,7 @@ const CreateRetur = ({ route, navigation }) => {
   const [fileSurat, setFileSurat] = useState(null);
   const [image, setImage] = useState(null);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const toast = useToast();
 
@@ -114,11 +115,22 @@ const CreateRetur = ({ route, navigation }) => {
   };
 
   const addRetur_Barang = async () => {
+    const jumlahBarangInt = parseInt(jumlahBarang);
+    const jumlahBarangTersediaInt = parseInt(jumlah_barang);
+  
     if (!jumlahBarang || !deskripsi || !tanggalRetur || !fileSurat || !image) {
       setFormError('Semua field wajib diisi.');
       setModalVisible(true);
       return;
     }
+  
+    if (jumlahBarangInt > jumlahBarangTersediaInt) {
+      setFormError(`Jumlah barang retur tidak boleh melebihi jumlah barang yang tersedia (${jumlahBarangTersediaInt}).`);
+      setModalVisible(true);
+      return;
+    }
+
+    setIsSaving(true); // Set loading state ketika proses penyimpanan dimulai
   
     try {
       const returRef = FIREBASE.database().ref('Retur_Barang').push();
@@ -138,26 +150,22 @@ const CreateRetur = ({ route, navigation }) => {
         Kategori_Retur: '',
         nama_barang: nama_barang,
         Tanggal_Retur: tanggalRetur,
-        jumlah_barang: jumlahBarang,
+        jumlah_barang: jumlahBarangInt,
         Deskripsi: deskripsi,
         Surat_Retur: fileSuratUrl,
         Gambar_Retur: imageUrl,
         status: 'Pending',
       };
   
-      // Save the Retur_Barang entry to the database
       await returRef.set(data);
   
-      // Now reduce the jumlah_barang in the corresponding Barang_Keluar entry
       const barangKeluarRef = FIREBASE.database().ref('Barang_Keluar');
       const snapshot = await barangKeluarRef.once('value');
       const barangKeluarData = snapshot.val();
   
-      // Find the Barang_Keluar entry with the matching kode_barang
       Object.entries(barangKeluarData).forEach(async ([key, value]) => {
         const barangInKeluar = value.barang.find(b => b.kode_barang === kode_barang);
         if (barangInKeluar) {
-          // Decrease jumlah_barang by the returned amount
           const newJumlahBarang = Number(barangInKeluar.jumlah_barang) - Number(jumlahBarang);
           if (newJumlahBarang < 0) {
             setFormError('Jumlah retur melebihi jumlah barang keluar.');
@@ -165,7 +173,6 @@ const CreateRetur = ({ route, navigation }) => {
             return;
           }
   
-          // Update the barang in Barang_Keluar
           const updatedBarang = value.barang.map(b =>
             b.kode_barang === kode_barang ? { ...b, jumlah_barang: newJumlahBarang.toString() } : b
           );
@@ -176,34 +183,12 @@ const CreateRetur = ({ route, navigation }) => {
         }
       });
   
-       // Fungsi untuk mengirim notifikasi setelah pengajuan barang keluar berhasil
-       const sendBarangReturNotification = async (user) => {
-        // Data notifikasi
-        const notificationData = {
-          title: 'Pending Pengajuan Retur barang ',
-          message: `Pengajuan Retur Barang\
-           dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
-          created_at: new Date().toISOString(),
-          user_status: {
-            [`user_2`]: { status: 'unread' },   // Status untuk user yang mengajukan
-            [`admin_1`]: { status: 'unread' }            // Status untuk admin (disesuaikan dengan ID admin)
-          }
-        };
-
-        // Push notifikasi ke database Firebase
-        await FIREBASE.database().ref('notifications').push(notificationData);
-      };
-
-      // Panggil fungsi setelah pengajuan barang keluar berhasil
-      sendBarangReturNotification(user);
-  
       setSuccessModalVisible(true);
     } catch (error) {
       setFormError('Terjadi kesalahan saat menyimpan data.');
       setModalVisible(true);
     }
   };
-  
 
   const handleSuccessClose = () => {
     setSuccessModalVisible(false);
@@ -261,11 +246,11 @@ const CreateRetur = ({ route, navigation }) => {
                 </FormControl>
 
                 <FormControl>
-                  <FormControl.Label>Jumlah Barang</FormControl.Label>
+                  <FormControl.Label>Jumlah Barang (Tersedia: {jumlah_barang})</FormControl.Label>
                   <Input
                     type="number"
                     value={jumlahBarang}
-                    onChangeText={(value) => setJumlahBarang(value)}
+                    onChangeText={setJumlahBarang}
                     borderRadius="md"
                     keyboardType='numeric'
                   />
@@ -320,12 +305,14 @@ const CreateRetur = ({ route, navigation }) => {
           </Card>
 
           <Center mt={6}>
-            <Button 
+          <Button 
               onPress={addRetur_Barang} 
               colorScheme="success" 
               borderRadius="md"
-              leftIcon={<Icon as={MaterialIcons} name="send" size="sm" />}>
-              Submit
+              isDisabled={isSaving} // Disable button saat proses simpan
+              leftIcon={isSaving ? <ActivityIndicator size="small" color="white" /> : null} // Spinner saat simpan
+            >
+              {isSaving ? 'Menyimpan...' : 'Simpan'}
             </Button>
           </Center>
 
