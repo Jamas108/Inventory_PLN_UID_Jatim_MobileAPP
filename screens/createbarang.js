@@ -253,7 +253,7 @@ const CreateBarang = ({ navigation }) => {
       } else if (name === 'jumlahBarang') {
         const maxJumlahBarang = newItems[index].maxJumlahBarang;
         if (Number(value) > maxJumlahBarang) {
-          showModal('Error', `Jumlah barang yang diinput melebihi stok yang tersedia. Jumlah maksimal yang dapat diretur adalah ${maxJumlahBarang} unit.`);
+          showModal('Error', `Jumlah barang yang diinput melebihi stok yang tersedia. Jumlah maksimal yang dapat diinput adalah ${maxJumlahBarang} unit.`);
           newItems[index].jumlahBarang = maxJumlahBarang.toString(); // Set to max quantity available
         } else {
           newItems[index].jumlahBarang = value; // Valid input

@@ -20,7 +20,7 @@ const Header = ({ route, title, withBack = false, }) => {
                         {!withBack ? (
                             <>
                                 <Image
-                                    source={require("../assets/inventory.jpg")}
+                                    source={require("../assets/icon.png")}
                                     w="12"
                                     h="12"
                                     alt="PLN LOGO"

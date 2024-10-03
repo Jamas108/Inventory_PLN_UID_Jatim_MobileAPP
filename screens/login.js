@@ -99,11 +99,11 @@ const Login = ({ navigation }) => {
               Login
             </Button>
 
-            <Pressable onPress={() => navigation.navigate("Register")}>
+            {/* <Pressable onPress={() => navigation.navigate("Register")}>
               <Text color="#004aad" fontSize="sm" textAlign="center" mt={2}>
                 Belum memiliki akun? <Text fontWeight="bold" underline>Registrasi</Text>
               </Text>
-            </Pressable>
+            </Pressable> */}
           </VStack>
         </Box>
       </Center>

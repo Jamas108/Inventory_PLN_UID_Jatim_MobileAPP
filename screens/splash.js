@@ -26,7 +26,7 @@ const Splash = ({ navigation }) => {
   return (
     <View style={styles.pages}>
       <Image 
-        source={require('../assets/inventory.jpg')} 
+        source={require('../assets/icon.png')} 
         style={styles.image} 
         resizeMode="contain" 
       />
