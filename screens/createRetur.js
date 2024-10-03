@@ -181,7 +181,8 @@ const CreateRetur = ({ route, navigation }) => {
         // Data notifikasi
         const notificationData = {
           title: 'Pending Pengajuan Retur barang ',
-          message: `Pengajuan Retur Barang dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
+          message: `Pengajuan Retur Barang\
+           dari ${user.name} berhasil, menunggu konfirmasi dari admin`,
           created_at: new Date().toISOString(),
           user_status: {
             [`user_2`]: { status: 'unread' },   // Status untuk user yang mengajukan
@@ -252,7 +253,7 @@ const CreateRetur = ({ route, navigation }) => {
                 <FormControl>
                   <FormControl.Label>Tanggal Retur</FormControl.Label>
                   <Input
-                    placeholder="Format DD-MM-YYYY"
+                    placeholder="Format YYYY-MM-DD"
                     value={tanggalRetur}
                     onChangeText={(value) => setTanggalRetur(value)}
                     borderRadius="md"

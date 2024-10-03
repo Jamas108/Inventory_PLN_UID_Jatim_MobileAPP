@@ -301,7 +301,7 @@ const CreateBarang = ({ navigation }) => {
             <FormControl>
               <FormControl.Label>Tanggal Pengajuan</FormControl.Label>
               <Input
-                placeholder="Format DD-MM-YYY"
+                placeholder="Format YYYY-MM-DD"
                 value={formData.tanggalPeminjaman}
                 onChangeText={(value) => setFormData({ ...formData, tanggalPeminjaman: value })}
 
@@ -312,7 +312,7 @@ const CreateBarang = ({ navigation }) => {
               <FormControl>
                 <FormControl.Label>Tanggal Kembali</FormControl.Label>
                 <Input
-                  placeholder="Format DD-MM-YYY"
+                  placeholder= "Format YYYY-MM-DD"
                   value={formData.tanggalKembali}
                   onChangeText={(value) => setFormData({ ...formData, tanggalKembali: value })}
 
