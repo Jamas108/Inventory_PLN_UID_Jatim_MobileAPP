@@ -15,11 +15,12 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.bogar18.Inventory_PLN_UID_Jatim",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.bogar18.Inventory_PLN_UID_Jatim"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

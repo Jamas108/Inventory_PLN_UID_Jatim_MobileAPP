@@ -109,13 +109,13 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.inventoryplnuidjatim"
+    namespace 'com.bogar18.Inventory_PLN_UID_Jatim'
     defaultConfig {
-        applicationId "com.inventoryplnuidjatim"
+        applicationId 'com.bogar18.Inventory_PLN_UID_Jatim'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0"
     }
     signingConfigs {
         debug {

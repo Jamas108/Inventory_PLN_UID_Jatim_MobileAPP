@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'InventoryPLNUIDJatim'
+rootProject.name = 'Inventory_PLN_UID_Jatim'
 
 dependencyResolutionManagement {
   versionCatalogs {
